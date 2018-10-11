@@ -1,0 +1,29 @@
+{
+  "database": {
+    "username": "",
+    "password": "",
+    "database": "",
+    "host": "localhost",
+    "dialect": "sqlite",
+    "storage": "storage/database.sqlite",
+    "operatorsAliases": false
+  },
+  "log": {
+    "appenders": {
+      "console": {
+        "type": "console"
+      },
+      "trace": {
+        "type": "file",
+        "filename": "logactivate.log",
+        "maxLogSize ": 31457280
+      }
+    },
+    "categories": { 
+      "default": { 
+        "appenders": ["console", "trace"], 
+        "level": "error" 
+      } 
+    }
+  }
+}

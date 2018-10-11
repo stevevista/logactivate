@@ -1,0 +1,12 @@
+.DS_Store
+dist/
+build/*
+!build/icons
+!build/*.exe
+coverage
+node_modules/
+*.log
+thumbs.db
+!.gitkeep
+storage/*
+package-lock.json

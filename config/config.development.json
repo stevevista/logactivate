@@ -1,0 +1,9 @@
+{
+  "log": {
+    "categories": { 
+      "default": { 
+        "level": "debug" 
+      } 
+    }
+  }
+}
