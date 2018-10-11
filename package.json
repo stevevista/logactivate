@@ -2,9 +2,11 @@
   "name": "logactivate",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node src/index.dev",
+    "build": "gulp",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -16,7 +18,33 @@
     "url": "https://github.com/stevevista/logactivate/issues"
   },
   "homepage": "https://github.com/stevevista/logactivate#readme",
+  "jest": {
+    "moduleFileExtensions": [
+      "js"
+    ],
+    "testMatch": [
+      "**/tests/**/*.+(js)"
+    ]
+  },
   "dependencies": {
-    "express": "^4.16.3"
+    "express": "^4.16.3",
+    "lodash": "^4.17.11",
+    "log4js": "^3.0.6",
+    "multer": "^1.4.0",
+    "sequelize": "^4.39.0",
+    "sqlite3": "^4.0.2"
+  },
+  "devDependencies": {
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-node": "^7.0.1",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "gulp": "^3.9.1",
+    "gulp-clean": "^0.4.0",
+    "gulp-eslint": "^5.0.0",
+    "gulp-terser": "^1.1.5",
+    "jest": "^23.6.0",
+    "supertest": "^3.3.0"
   }
 }

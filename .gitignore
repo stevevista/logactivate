@@ -10,3 +10,4 @@ thumbs.db
 !.gitkeep
 storage/*
 package-lock.json
+tests/*.js
