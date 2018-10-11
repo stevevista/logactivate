@@ -39,7 +39,7 @@ async function initDb () {
     // not initilized
   }
 
-  await sequelize.sync({logging: logger.info, force: false})
+  await sequelize.sync({logging: (log) => logger.info(log), force: false})
 }
 
 if (cluster.isMaster) {

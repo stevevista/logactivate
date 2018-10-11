@@ -27,6 +27,7 @@
     ]
   },
   "dependencies": {
+    "@godaddy/terminus": "^4.1.0",
     "express": "^4.16.3",
     "lodash": "^4.17.11",
     "log4js": "^3.0.6",
