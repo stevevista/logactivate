@@ -29,9 +29,18 @@ router.post('/', (req, res) => {
 })
 
 router.post('/report', async (req, res) => {
-  await db.log.create({
-    imei: req.body.imei
-  })
+  try {
+    if (!req.body.imei) {
+      throw Error('invalid imei parameters')
+    }
+    await db.log.create({
+      imei: req.body.imei
+    })
+  } catch (e) {
+    logger.fatal(e.message)
+    return res.status(500).json({message: e.message})
+  }
+
   res.json({status: 0})
 })
 
