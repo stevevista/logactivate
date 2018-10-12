@@ -1,9 +1,9 @@
-const fs = require('fs')
-const path = require('path')
+// const fs = require('fs')
+// const path = require('path')
 const { Router } = require('express')
 
 const router = Router()
-
+/*
 fs.readdirSync(__dirname).forEach(file => {
   if (file !== 'index.js') {
     const subpath = file.replace(/(\.\/|\.js)/g, '')
@@ -11,5 +11,7 @@ fs.readdirSync(__dirname).forEach(file => {
     router.use('/' + subpath, require(fullpath))
   }
 })
+*/
+router.use('/log', require('./log'))
 
 module.exports = router

@@ -11,7 +11,7 @@ Please read the guide on Nodejs.org to learn how to install node on linux or Win
 $: git clone git@github.com:stevevista/logactivate.git 
 # or download zipped file
 $: cd logactivate
-$: npm run steup
+$: npm run setup
 
 ```
 
