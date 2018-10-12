@@ -1,23 +1,34 @@
 'use strict'
 const log4js = require('log4js')
 const http = require('http')
+const fs = require('fs')
+const path = require('path')
 const express = require('express')
 const cluster = require('cluster')
 const bodyParser = require('body-parser')
-const {createTerminus} = require('@godaddy/terminus')
+
+const logact = require('./logact')
 const config = require('./config')
-const {start, stop} = require('./service')
 
 log4js.configure(config.log)
 const logger = log4js.getLogger()
 
-const logging = require('./logging/log4js')
-logging.configure({
-  "filename": "logactivate2.log",
-  "maxLogSize ": 31457280
+if (cluster.isMaster) {
+  if (!fs.existsSync(config.logdir)) {
+    try {
+      fs.mkdirSync(config.logdir)
+    } catch (e) {
+      logger.fatal(e.message)
+    }
+  }
+}
+
+logact.configure({
+  filename: path.join(config.logdir, config.exceptionFilename),
+  maxLogSize: config.exceptionFilesize
 })
 
-logging.log('error', 'xxxx')
+logact.log('error', 'xxxx', process.pid)
 
 const app = express()
 
@@ -28,29 +39,14 @@ app.use(require('./routes'))
 
 const server = http.createServer(app)
 
-createTerminus(server, {
-  signal: 'SIGINT',
-  onSignal () {
-    if (cluster.isMaster) {
-      console.log(process.id)
-      stop()
-    }
-  }
-})
-
 const numCPUs = require('os').cpus().length
 
 if (cluster.isMaster) {
   logger.info(`http server on ${config.port}, on ${numCPUs} cores`)
-
-  start()
+  console.log(`http server on ${config.port}, on ${numCPUs} cores`)
 
   for (let i = 0; i < numCPUs; i++) {
-    const worker = cluster.fork()
-
-    worker.on('exit', (code, signal) => {
-      console.log('--------', signal)
-    })
+    cluster.fork()
   }
 
   cluster.on('listening', (worker, address) => {

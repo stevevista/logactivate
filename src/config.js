@@ -10,4 +10,21 @@ if (fs.existsSync(envConfig)) {
   config = _.merge(config, require(envConfig))
 }
 
+// fix default values
+if (!config.logdir) {
+  config.logdir = 'storage'
+}
+
+if (!config.exceptionFilename) {
+  config.exceptionFilename = 'exceptions.log'
+}
+
+if (!config.exceptionFilename) {
+  config.exceptionFilesize = '1M'
+}
+
+if (config.database.storage && config.database.storage[0] !== '/') {
+  config.database.storage = path.join(config.logdir, config.database.storage)
+}
+
 module.exports = config

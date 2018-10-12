@@ -3,8 +3,14 @@ const express = require('express')
 const fs = require('fs')
 const bodyParser = require('body-parser')
 const log = require('../dist/routes/log')
+const logact = require('../dist/logact')
 
 const initApp = () => {
+  logact.configure({
+    filename: './storage/test_logcat.log',
+    maxLogSize: '1M'
+  })
+
   const app = express()
   app.use(bodyParser.json())
   app.use(bodyParser.urlencoded({ extended: true }))
@@ -25,10 +31,10 @@ describe('upload log file', () => {
     const app = initApp()
     await request(app).post('/upload')
       .field('imei', '11332244555')
-      .attach('file', './tests/bigfile.pdf')
+      .attach('file', './tests/bigfile.msi')
       .expect(200)
 
-    expect(fs.existsSync('./11332244555_output.pdf')).toEqual(true)
+    expect(fs.existsSync('./storage/11332244555/bigfile.msi')).toEqual(true)
   })
 
   test('should fail without file', async () => {

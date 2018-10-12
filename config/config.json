@@ -1,12 +1,15 @@
 {
   "port": 3000,
+  "logdir": "storage",
+  "exceptionFilename": "exceptions.log",
+  "exceptionFilesize": "1M",
   "database": {
     "username": "",
     "password": "",
     "database": "",
     "host": "localhost",
     "dialect": "sqlite",
-    "storage": "storage/database.sqlite",
+    "storage": "database.sqlite",
     "operatorsAliases": false
   },
   "log": {
@@ -23,7 +26,7 @@
     "categories": { 
       "default": { 
         "appenders": ["console", "trace"], 
-        "level": "error" 
+        "level": "warn" 
       } 
     }
   }
