@@ -62,3 +62,18 @@ the server log is logactivate.log, default level is warning, you can modify the 
   - body: multipart format, contain field imei && a attached file
   - response: on success, HTTP response status will be 200, othewise, the status incidates error number, and responseBody contain json message { message: xxxxx }
   - notice: the file will be stored in storage/[imei]/orginalFilename
+#### examples
+```
+POST /log/upload HTTP/
+Accept:text,application/json,...
+...
+HOST:172.21.1.100:3000
+Content-Length:2200
+Connection:Keep-Alive
+Cache-Control:no-cache
+Content-Type: multipart/form-data; boundary=...
+---
+Content-Disposition: form-data; imei="11223344556"; filename="log-2018-11-12.rar"
+Content-Type: application/octet-stream
+...
+```
