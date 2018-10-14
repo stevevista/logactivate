@@ -1,0 +1,13 @@
+port: 3000
+logdir: storage
+exceptionFilename: exceptions.log
+exceptionFilesize: 1M
+exceptionBackups: 100
+appLogFilename: logactivate.log
+appLogLevel: warn
+appLogSize: 31457280
+database:
+  storage: database.sqlite
+  host: localhost
+  dialect: sqlite
+  operatorsAliases: false

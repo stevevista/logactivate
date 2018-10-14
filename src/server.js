@@ -25,10 +25,9 @@ if (cluster.isMaster) {
 
 logact.configure({
   filename: path.join(config.logdir, config.exceptionFilename),
-  maxLogSize: config.exceptionFilesize
+  maxLogSize: config.exceptionFilesize,
+  backups: config.exceptionBackups
 })
-
-logact.log('error', 'xxxx', process.pid)
 
 const app = express()
 

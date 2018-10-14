@@ -25,9 +25,27 @@ $: node .
 ```
 CTRL + C
 ```
+## Prebuilts
+logactivate-linux-x64-x.x.x  Linux 64bit system
+logactivate-win32-x.x.x.exe  Win32 system
+
+just run prebuilts in console, dont missing config directory
+```
+C:\dev\logactivate>logactivate-win32-1.0.0.exe
+http server on 3000, on 4 cores
+...
+```
 
 ## Configuration
-Edit config/config.json or config/config.production.json, modifying server port, log file storage path, and etc.
+Edit config/base.yml or config/production.yml, modifying server port, log file storage path, and etc.
+default server port is 3000
+```
+port: 3000
+logdir: storage
+exceptionFilename: exceptions.log
+exceptionFilesize: 1M
+exceptionBackups: 100
+```
 
 ## Server log
 the server log is logactivate.log, default level is warning, you can modify the level in config
