@@ -51,7 +51,7 @@ exceptionBackups: 100
 the server log is logactivate.log, default level is warning, you can modify the level in config
 
 ## API
-* http://[IP Address]:[port]/log/record
+* http://[IP Address]:[port]/log/report
   - method: POST
   - body: should be json encoded (application/json) or urlencoded
   - response: on success, HTTP response status will be 200, othewise, the status incidates error number, and responseBody contain json message { message: xxxxx }
@@ -63,6 +63,17 @@ the server log is logactivate.log, default level is warning, you can modify the 
   - response: on success, HTTP response status will be 200, othewise, the status incidates error number, and responseBody contain json message { message: xxxxx }
   - notice: the file will be stored in storage/[imei]/orginalFilename
 #### examples
+- test with curl
+```
+curl -d "imei=777&exception=ddsfsdf" "http://172.21.3.146:3000/log/report"
+{}
+
+curl -F "file=@card.txt" -F "imei=222222222" http://172.21.3.146:3000/log/upload
+{}
+
+curl -F "file=@card.txt" http://172.21.3.146:3000/log/upload
+{"message":"invalid imei parameters"}
+```
 ```
 POST /log/upload HTTP/
 Accept:text,application/json,...
