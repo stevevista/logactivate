@@ -1,0 +1,8 @@
+settings.language: Language
+settings.adb: ADB
+settings.about: About
+settings.devSerial: Serial
+settings.logLevel: Log Level
+settings.port: Server Port
+settings.exceptionPath: Exceptions Info
+sidebar.setting: Setting

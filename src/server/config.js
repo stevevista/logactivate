@@ -24,9 +24,13 @@ if (fs.existsSync(envConfigPath)) {
   config = _.merge(config, requireJs(envConfigPath))
 }
 
-// fix default values
+// resolve paths
 if (!config.logdir) {
   config.logdir = 'storage'
+}
+
+if (config.logdir[0] !== '/') {
+  config.logdir = path.join(process.cwd(), config.logdir)
 }
 
 if (!config.exceptionFilename) {
@@ -37,8 +41,10 @@ if (!config.exceptionFilename) {
   config.exceptionFilesize = '1M'
 }
 
-if (config.database.storage && config.database.storage[0] !== '/') {
-  config.database.storage = path.join(config.logdir, config.database.storage)
+if (config.database.storage) {
+  if (config.database.storage[0] !== '/') {
+    config.database.storage = path.join(config.logdir, config.database.storage)
+  }
 }
 
 // app log configuration

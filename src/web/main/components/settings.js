@@ -5,6 +5,7 @@ import { injectIntl } from 'react-intl'
 import pkg from '@/../../package.json'
 import { connect } from 'react-redux'
 import {locales} from '../locales'
+import axios from 'axios'
 
 class Settings extends React.Component {
   constructor (props) {
@@ -13,9 +14,23 @@ class Settings extends React.Component {
       adb: false,
       serial: false,
       qpst: false,
-      log: 'warn'
+      log: 'warn',
+      port: 0,
+      exceptionPath: ''
     }
   }
+
+  componentDidMount () {
+    axios.get('/info/config')
+      .then(res => {
+        console.log(res)
+        this.setState({
+          port: res.data.port,
+          exceptionPath: res.data.exceptionPath
+        })
+      })
+  }
+
   render () {
     const titleStyle = {float: 'right', marginRight: 10}
     const rowStyle = {marginBottom: 15}
@@ -27,7 +42,7 @@ class Settings extends React.Component {
             <span style={titleStyle}>{this.props.intl.formatMessage({id: 'settings.about'})}</span>
           </Col>
           <Col span={15}>
-            Bella {pkg.version} - JLQ, authed by R.J. Powered by Electron + React
+            Logactivate {pkg.version} - authed by R.J. Powered by React
           </Col>
         </Row>
 
@@ -48,31 +63,30 @@ class Settings extends React.Component {
 
         <Row style={rowStyle}>
           <Col span={8}>
+            <span style={titleStyle}>{this.props.intl.formatMessage({id: 'settings.port'})}</span>
+          </Col>
+          <Col span={15}>
+            <span>{this.state.port}</span>
+          </Col>
+        </Row>
+
+        <Row style={rowStyle}>
+          <Col span={8}>
+            <span style={titleStyle}>{this.props.intl.formatMessage({id: 'settings.exceptionPath'})}</span>
+          </Col>
+          <Col span={15}>
+            <span>{this.state.exceptionPath}</span>
+          </Col>
+        </Row>
+
+        <Row style={rowStyle}>
+          <Col span={8}>
             <span style={titleStyle}>{this.props.intl.formatMessage({id: 'settings.adb'})}</span>
           </Col>
           <Col span={15}>
             <Switch checked={this.state.adb} onChange={this.handleAdbSwitch}/>
           </Col>
         </Row>
-
-        <Row style={rowStyle}>
-          <Col span={8}>
-            <span style={titleStyle}>{this.props.intl.formatMessage({id: 'settings.devSerial'})}</span>
-          </Col>
-          <Col span={15}>
-            <Switch checked={this.state.serial} onChange={this.handleDevSerialSwitch}/>
-          </Col>
-        </Row>
-
-        <Row style={rowStyle}>
-          <Col span={8}>
-            <span style={titleStyle}>{this.props.intl.formatMessage({id: 'settings.useQpst'})}</span>
-          </Col>
-          <Col span={15}>
-            <Switch checked={this.state.qpst} onChange={this.handleQPSTSwitch}/>
-          </Col>
-        </Row>
-
         <Row style={rowStyle}>
           <Col span={8}>
             <span style={titleStyle}>{this.props.intl.formatMessage({id: 'settings.logLevel'})}</span>
@@ -89,7 +103,6 @@ class Settings extends React.Component {
             <Button type="primary" shape="circle" icon="folder-open" style={{marginLeft: 20}} size="small" onClick={this.openLogLcation}/>
           </Col>
         </Row>
-
       </div>
     )
   }

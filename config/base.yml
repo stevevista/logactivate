@@ -1,4 +1,5 @@
 port: 3001
+cluster: true
 logdir: storage
 exceptionFilename: exceptions.log
 exceptionFilesize: 1M
@@ -17,4 +18,4 @@ session:
 redis-not-enabled:
   host: 127.0.0.1
   port: 6379
-credential: true
+

@@ -79,7 +79,7 @@ const rendererConfig = {
             loader: 'babel-loader',
             options: {
               presets: ['@babel/react', '@babel/env'],
-              plugins: ['@babel/plugin-proposal-class-properties']
+              plugins: ['@babel/plugin-proposal-class-properties', ["import", { "libraryName": "antd", "libraryDirectory": "es", "style": true }]]
             }
           }
         ],
@@ -130,7 +130,27 @@ const rendererConfig = {
     new webpack.NoEmitOnErrorsPlugin()
   ],
   optimization: {
-    minimizer: []
+    minimizer: [],
+    splitChunks: {
+      chunks: "async",
+      minSize: 30000,
+      minChunks: 1,
+      maxAsyncRequests: 5,
+      maxInitialRequests: 3,
+      automaticNameDelimiter: '~',
+      name: true,
+      cacheGroups: {
+        vendors: {
+          test: /[\\/]node_modules[\\/]/,
+          priority: -10
+        },
+        default: {
+          minChunks: 2,
+          priority: -20,
+          reuseExistingChunk: true
+        }
+      }
+    }
   },
   resolve: {
     alias: {
@@ -170,7 +190,7 @@ getEntries().forEach(entry => {
 })
 
 if (process.env.NODE_ENV === 'production') {
-  rendererConfig.devtool = ''
+  rendererConfig.devtool = false
 
   rendererConfig.plugins.push(
     new CopyWebpackPlugin([

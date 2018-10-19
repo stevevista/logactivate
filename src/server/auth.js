@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken')
 const config = require('./config')
 
-function authToken (credentialsRequired) {
+function authToken () {
   return function (req, res, next) {
     const token = (req.query && req.query.access_token) || 
       (req.body && req.body.access_token) || 
@@ -9,9 +9,6 @@ function authToken (credentialsRequired) {
       (req.session && req.session.access_token)
 
     if (!token) {
-      if (credentialsRequired) {
-        throw Error('No authorization token was found')
-      }
       return next()
     }
     jwt.verify(token, config.session.secrets, (err, decoded) => {
@@ -22,15 +19,21 @@ function authToken (credentialsRequired) {
   }
 }
 
-function signToken (id) {
-  return jwt.sign({_id: id}, config.session.secrets, {expiresIn: '1y'})
+function signToken (obj) {
+  return jwt.sign(obj, config.session.secrets, {expiresIn: '1y'})
 }
 
-function isAuthenticated (credentialsRequired) {
-  return authToken(credentialsRequired)
+function authenticateRequird () {
+  return function (req, res, next) {
+    if (!req.decoded_token) {
+      throw Error('No authorization token was found')
+    }
+    next()
+  }
 }
 
 module.exports = {
-  isAuthenticated,
+  authToken,
+  authenticateRequird,
   signToken
 }

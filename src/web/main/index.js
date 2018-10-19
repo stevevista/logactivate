@@ -8,7 +8,7 @@ import { IntlProvider } from 'react-intl'
 import {locales} from './locales'
 import moment from 'moment'
 
-import './styles/style.less'
+import './style.less'
 
 import App from './components/app'
 

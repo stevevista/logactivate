@@ -13,5 +13,6 @@ fs.readdirSync(__dirname).forEach(file => {
 })
 */
 router.use('/log', require('./log'))
+router.use('/info', require('./info'))
 
 module.exports = router

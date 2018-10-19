@@ -5,9 +5,9 @@ const express = require('express')
 const cluster = require('cluster')
 const bodyParser = require('body-parser')
 const cookieSession = require('cookie-session')
-
 const logact = require('./logact')
 const config = require('./config')
+const {authToken} = require('./auth')
 
 const logger = require('log4js').getLogger()
 
@@ -29,24 +29,28 @@ app.use(cookieSession({
 }))
 
 app.use('/', express.static(path.join(__dirname, '../public'), {
-  maxAge: 7776000000,
-  etag: '1.0.0'
+  maxAge: '1d'
 }))
 
+app.use(authToken())
 app.use(require('./routes'))
 
+// handle errors
 app.use((err, req, res, next) => {
   res.status(err.status || 500).json({message: err.message})
   logger.fatal(req.path, err.message)
 })
 
-const server = http.createServer(app)
-
+// handle 404
 if (process.env.NODE_ENV === 'production') {
   app.use((req, res) => {
     res.status(404).json({message: 'not found'})
   })
-  
+}
+
+const server = http.createServer(app)
+
+if (config.cluster) {
   const numCPUs = require('os').cpus().length
 
   if (cluster.isMaster) {
@@ -70,8 +74,8 @@ if (process.env.NODE_ENV === 'production') {
     server.listen(config.port)
   }  
 } else {
-  logger.info(`http server on ${config.port}, on development mode`)
-  console.log(`http server on ${config.port}, on development mode`)
+  logger.info(`http server on ${config.port}, on single core mode`)
+  console.log(`http server on ${config.port}, on single core mode`)
   server.listen(config.port)
 }
 

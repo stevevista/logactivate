@@ -1,9 +1,8 @@
-import IconFont from '../iconfont'
 import {Icon} from 'antd'
 
 export default [
   {
-    icon: IconFont,
+    icon: Icon,
     iconType: 'setting',
     messageId: 'sidebar.setting',
     path: 'test',
