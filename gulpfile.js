@@ -4,16 +4,16 @@ const clean = require('gulp-clean')
 const eslint = require('gulp-eslint')
 
 gulp.task('build', ['clean'], () => {
-  return gulp.src('src/**/*.js')
+  return gulp.src('src/server/**/*.js')
     .pipe(eslint())
     .pipe(eslint.format())
     .pipe(eslint.failAfterError())
     .pipe(terser())
-    .pipe(gulp.dest('dist'))
+    .pipe(gulp.dest('dist/lib'))
 })
 
 gulp.task('clean', () => {
-  return gulp.src('dist', {force: true})
+  return gulp.src('dist/lib', {force: true})
     .pipe(clean())
 })
 
