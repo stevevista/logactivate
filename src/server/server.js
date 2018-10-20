@@ -25,7 +25,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 app.use(cookieSession({
   name: 'session',
   secret: config.session.secrets,
-  maxAge: config.session.maxHourAges * 60 * 60 * 1000
+  maxAge: config.session.maxAge
 }))
 
 app.use('/', express.static(path.join(__dirname, '../public'), {

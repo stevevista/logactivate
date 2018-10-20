@@ -14,8 +14,4 @@ database:
   operatorsAliases: false
 session:
   secrets: abcd.1234
-  maxHourAges: 24
-redis-not-enabled:
-  host: 127.0.0.1
-  port: 6379
-
+  maxAge: '24h'

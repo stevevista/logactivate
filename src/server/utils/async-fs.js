@@ -62,9 +62,54 @@ function access (path, mode) {
   })
 }
 
+function rename (oldPath, newPath) {
+  return new Promise((resolve, reject) => {
+    fs.rename(oldPath, newPath, err => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
+function copy (src, dest) {
+  return new Promise((resolve, reject) => {
+    const ws = fs.createWriteStream(dest)
+    ws.on('error', err => reject(err))
+    ws.on('close', () => resolve())
+
+    if (typeof src === 'string') {
+      src = [src]
+    }
+
+    for (const p of src) {
+      const is = fs.createReadStream(p)
+      is.pipe(ws)
+      is.on('error', err => reject(err))
+    }
+  })
+}
+
+function unlink (path) {
+  return new Promise((resolve, reject) => {
+    fs.unlink(path, (err) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
 module.exports = {
   access,
   stat,
   mkdir,
-  writeFile
+  writeFile,
+  rename,
+  copy,
+  unlink
 }

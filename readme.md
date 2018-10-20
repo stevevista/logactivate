@@ -68,7 +68,7 @@ the server log is logactivate.log, default level is warning, you can modify the 
 curl -d "imei=777&exception=ddsfsdf" "http://172.21.3.146:3000/log/report"
 {}
 
-curl -F "file=@card.txt" -F "imei=222222222" http://172.21.3.146:3000/log/upload
+curl -F "file=@card.txt" -F "imei=222222222" http://localhost:3001/log/upload
 {}
 
 curl -F "file=@card.txt" http://172.21.3.146:3000/log/upload
@@ -88,3 +88,14 @@ Content-Disposition: form-data; name="imei"
 --------------------------8d7d3d79e075f69d--
 ...
 ```
+#### Split large upload file to multi-trunks
+```
+curl -F "file=@data.bin" -F "imei=222222222" -F "trunks=1" http://localhost:3001/log/upload
+curl -F "file=@data.bin" -F "imei=222222222" -F "trunks=2" http://localhost:3001/log/upload
+...
+curl -F "file=@data.bin" -F "imei=222222222" -F "trunks=N" -F "eot=1" http://localhost:3001/log/upload
+```
+* keep the filename and imei the same
+* start from 1
+* when upload last trunk, append field 'eot=1' (means End Of Truncks)
+* the server will merge all trunks to one file
