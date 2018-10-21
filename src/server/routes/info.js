@@ -1,9 +1,9 @@
 'use strict'
-const {AsyncRouter} = require('express-async-router')
+const Router = require('express-promise-router')
 const path = require('path')
 const config = require('../config')
 
-const router = AsyncRouter()
+const router = Router()
 
 router.get('/config', (req, res) => {
   // filter out crediential info

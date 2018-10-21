@@ -4,9 +4,7 @@ coverage
 node_modules
 storage
 *.log
-release/*
-!release/logactivate-linux-*
-!release/logactivate-win-*
+release
 tests/*
 !tests/*.js
 npm-debug.log

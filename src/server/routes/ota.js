@@ -1,5 +1,5 @@
 'use strict'
-const {Router} = require('express')
+const Router = require('express-promise-router')
 const path = require('path')
 const yaml = require('js-yaml')
 const fs = require('fs')
@@ -15,7 +15,6 @@ router.get('/version', (req, res) => {
 
 router.get('/download/:firmware', (req, res) => {
   const filepath = path.join(config.ota.firmwareDir, req.params.firmware)
-  console.log(filepath)
   res.download(filepath, req.params.firmware, err => {
     if (err) {
       console.log(err)

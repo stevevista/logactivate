@@ -71,7 +71,7 @@ curl -d "imei=777&exception=ddsfsdf" "http://172.21.3.146:3000/log/report"
 curl -F "file=@card.txt" -F "imei=222222222" http://localhost:3001/log/upload
 {}
 
-curl -F "file=@card.txt" http://172.21.3.146:3000/log/upload
+curl -F "file=@card.txt" http://localhost:3001/log/upload
 {"message":"invalid imei parameters"}
 ```
 suppose the card.txt content is 'data', the psot body data will be
