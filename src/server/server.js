@@ -7,6 +7,8 @@ const bodyParser = require('body-parser')
 const cookieSession = require('cookie-session')
 const logact = require('./logact')
 const config = require('./config')
+require('./models')
+
 const {authToken} = require('./auth')
 
 const logger = require('log4js').getLogger()

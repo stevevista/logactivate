@@ -5,7 +5,6 @@ const streams = require('streamroller')
 const os = require('os')
 const dateFormat = require('date-format')
 const util = require('util')
-const db = require('../models')
 const logger = require('log4js').getLogger()
 
 function maxFileSizeUnitTransform (maxLogSize) {
@@ -94,10 +93,6 @@ function fileAppender (file, logSize, numBackups, options, timezoneOffset) {
   const writer = openTheStream(file, logSize, numBackups, options)
 
   const app = function (loggingEvent) {
-    console.log(loggingEvent)
-    db.log.create({
-      title: loggingEvent.data[0]
-    })
     writer.write(basicLayout(loggingEvent, timezoneOffset) + eol, 'utf8')
   }
 

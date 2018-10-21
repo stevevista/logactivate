@@ -24,6 +24,10 @@ if (fs.existsSync(envConfigPath)) {
   config = _.merge(config, requireJs(envConfigPath))
 }
 
+if (!config.configDir) {
+  config.configDir = configDir
+}
+
 // resolve paths
 if (!config.logdir) {
   config.logdir = 'storage'
@@ -33,18 +37,24 @@ if (config.logdir[0] !== '/') {
   config.logdir = path.join(process.cwd(), config.logdir)
 }
 
+function resolvePath (obj, key, cwd) {
+  if (obj && key in obj) {
+    if (obj[key][0] !== '/') {
+      obj[key] = path.join(cwd || config.logdir, obj[key])
+    }
+  }
+}
+
+resolvePath(config.database, 'storage')
+resolvePath(config.ota, 'firmwareDir', process.cwd())
+
+// default log option
 if (!config.exceptionFilename) {
   config.exceptionFilename = 'exceptions.log'
 }
 
 if (!config.exceptionFilename) {
   config.exceptionFilesize = '1M'
-}
-
-if (config.database.storage) {
-  if (config.database.storage[0] !== '/') {
-    config.database.storage = path.join(config.logdir, config.database.storage)
-  }
 }
 
 // app log configuration

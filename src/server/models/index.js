@@ -26,19 +26,8 @@ Object.keys(db).forEach(modelName => {
 db.sequelize = sequelize
 db.Sequelize = Sequelize
 
-async function initDb () {
-  try {
-    await db.log.findOne()
-    return
-  } catch (e) {
-    // not initilized
-  }
-
-  await sequelize.sync({logging: (log) => logger.info(log), force: false})
-}
-
 if (cluster.isMaster) {
-  initDb()
+  sequelize.sync({logging: (log) => logger.info(log), force: false})
 }
 
 module.exports = db

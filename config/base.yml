@@ -15,3 +15,5 @@ database:
 session:
   secrets: abcd.1234
   maxAge: '24h'
+ota:
+  firmwareDir: storage/firmwares
