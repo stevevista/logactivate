@@ -3,6 +3,7 @@ import zhCN from './zh-cn.yaml'
 import cnAppLocaleData from 'react-intl/locale-data/zh'
 import enAppLocaleData from 'react-intl/locale-data/en'
 import antdEn from 'antd/lib/locale-provider/en_US'
+import antdCN from 'antd/lib/locale-provider/zh_CN'
 import { addLocaleData } from 'react-intl'
 import 'moment/locale/zh-cn'
 
@@ -61,7 +62,7 @@ export const locales = {
     messages: {
       ...zhCN
     },
-    antd: null,
+    antd: antdCN,
     data: cnAppLocaleData
   },
   'en': {

@@ -28,6 +28,8 @@ module.exports = {
     'padded-blocks': 0,
     'no-multiple-empty-lines': 0,
     'key-spacing': 0,
-    'space-before-function-paren': 0
+    'space-before-function-paren': 0,
+    'react/display-name': 0,
+    'react/prop-types': 0
   }
 }

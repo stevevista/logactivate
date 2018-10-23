@@ -19,14 +19,31 @@ function authToken () {
   }
 }
 
-function signToken (obj) {
-  return jwt.sign(obj, config.session.secrets, {expiresIn: '1y'})
+function signToken (obj, req) {
+  const token = jwt.sign(obj, config.session.secrets, {expiresIn: '3d'})
+  if (req) {
+    req.session.access_token = token
+  }
+  return token
 }
 
 function authenticateRequird () {
   return function (req, res, next) {
     if (!req.decoded_token) {
-      throw Error('No authorization token was found')
+      const err = Error('No authorization token was found')
+      err.status = 401
+      throw err
+    }
+    next()
+  }
+}
+
+function authLevel(level) {
+  return function (req, res, next) {
+    if (req.decoded_token.level > level) {
+      const err = Error(`auth level need above ${level}`)
+      err.status = 401
+      throw err
     }
     next()
   }
@@ -35,5 +52,6 @@ function authenticateRequird () {
 module.exports = {
   authToken,
   authenticateRequird,
-  signToken
+  signToken,
+  authLevel
 }

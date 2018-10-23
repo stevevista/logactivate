@@ -36,18 +36,6 @@ const rendererConfig = {
           {
             loader: 'less-loader', // compiles Less to CSS
             options: {
-              modifyVars: {
-                'body-background': '#333333',
-                'component-background': '#333333',
-                'text-color': 'fade(#eee, 65%)',
-                'text-color-secondary': 'fade(#eee, 45%)',
-                'layout-header-background': '#333333',
-                'layout-trigger-background': '#3f3f46',
-                'layout-body-background': '#333333',
-                'btn-default-color': 'fade(#000, 75%)',
-                'input-color': 'fade(#000, 75%)',
-                'menu-dark-submenu-bg': '#1e1e1e'
-              },
               javascriptEnabled: true,
             }
           }

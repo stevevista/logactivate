@@ -11,6 +11,7 @@ import moment from 'moment'
 import './style.less'
 
 import App from './components/app'
+import Auth from './components/auth'
 
 moment.locale(store.getState().app.locale)
 
@@ -26,11 +27,9 @@ class Root extends React.Component {
     return (
       <LocaleProvider locale={locales[locale].antd}>
         <IntlProvider locale={locale} messages={locales[locale].messages}>
-          <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
-            <div style={{height: '100%', flex: 1, overflowY: 'auto'}}>
-              <App/>
-            </div>
-          </div>
+          {
+            this.state.authed ? <App/> : <Auth onAuthed={() => this.setState({authed: true})}/>
+          }
         </IntlProvider>
       </LocaleProvider>
     )

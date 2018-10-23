@@ -1,10 +1,11 @@
 {
   "name": "logactivate",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "desktop bulid demo",
   "main": "dist/lib/index.js",
   "scripts": {
     "dev": "node scripts/devServer.js",
+    "dev:server": "node scripts/devServer.js --no-web",
     "build:server": "gulp",
     "build:web": "node scripts/build.js",
     "build": "npm run build:server && npm run build:web",
@@ -12,13 +13,16 @@
     "lint": "eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter src test",
     "lint:fix": "eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter --fix src test",
     "test": "jest",
-    "pack": "npm run build && pkg . --output ./release/logactivate-linux-x64-1.1.0 --targets node8-linux-x64",
-    "pack:win": "npm run build && pkg . --output ./release/logactivate-win-x86-1.1.0.exe --targets node8-win-x86"
+    "pack": "npm run build && pkg . --out-path ./release"
   },
   "bin": "dist/lib/index.js",
   "pkg": {
     "assets": [
       "dist/public/**/*"
+    ],
+    "targets": [
+      "node8-linux-x64",
+      "node8-win-x86"
     ]
   },
   "repository": {

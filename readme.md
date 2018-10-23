@@ -65,7 +65,7 @@ the server log is logactivate.log, default level is warning, you can modify the 
 #### examples
 - test with curl
 ```
-curl -d "imei=777&exception=ddsfsdf" "http://172.21.3.146:3000/log/report"
+curl -d "imei=777&exception=ddsfsdf" "http://localhost:3001/log/report"
 {}
 
 curl -F "file=@card.txt" -F "imei=222222222" http://localhost:3001/log/upload
@@ -99,3 +99,32 @@ curl -F "file=@data.bin" -F "imei=222222222" -F "trunks=N" -F "eot=1" http://loc
 * start from 1
 * when upload last trunk, append field 'eot=1' (means End Of Truncks)
 * the server will merge all trunks to one file
+
+## OTA
+### Way 1: Static configure
+* modiy config/ota.yml and restart server
+* query version by /ota/version
+```
+{"version":"1.0.0","firmware":"http://localhost:3001/ota/download/system-1.0.0.pkg","description":"xxxx"}
+```
+* download firmware thorugh url indicated
+
+### Way 2: Web admin
+* http://localhost:3001/main.html
+* login with sysadmin, pasword: sysadmin (configured in config/base.yml)
+* in OTA page, upload the firmware package
+
+* query version by /ota/versions
+```
+[{"name":"package.bin","version":"werwer","description":"werwr","updatedAt":"2018-10-23T12:45:22.986Z","firmware":"http://localhost:3001/ota/download/818d6680-d6c1-11e8-876f-35038de47c60"}, {...}, {...}]
+
+```
+* download firmware thorugh url indicated
+### Continue download
+* download firmware, write bytes to file
+* connection broken, remember the last write position LAST_POSITION
+* download request again, but set HTTP headers 
+```
+Range: bytes=LAST_POSITION-
+```
+* append bytes to file

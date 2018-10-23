@@ -1,20 +1,8 @@
 
 const fs = require('fs')
+const path = require('path')
 
 async function mkdir (path, options) {
-  let check = false
-  if (options && 'check' in options) {
-    check = options['check']
-    delete options['check']
-  }
-
-  if (check) {
-    const exists = await access(path)
-    if (exists) {
-      return
-    }
-  }
-  
   return new Promise((resolve, reject) => {
     fs.mkdir(path, options, err => {
       if (err) {
@@ -64,9 +52,15 @@ function access (path, mode) {
 
 function rename (oldPath, newPath) {
   return new Promise((resolve, reject) => {
-    fs.rename(oldPath, newPath, err => {
+    fs.rename(oldPath, newPath, async err => {
       if (err) {
-        reject(err)
+        try {
+          await copy(oldPath, newPath)
+          const r = await unlink(oldPath)
+          resolve(r)
+        } catch (e) {
+          reject(e)
+        }
       } else {
         resolve()
       }
@@ -104,6 +98,17 @@ function unlink (path) {
   })
 }
 
+async function makeSureDir(dir) {
+  const exists = await access(dir)
+  if (!exists) {
+    await mkdir(dir, {recursive: true})
+  }
+}
+
+function makeSureFileDir(fullpath) {
+  return makeSureDir(path.dirname(fullpath))
+}
+
 module.exports = {
   access,
   stat,
@@ -111,5 +116,7 @@ module.exports = {
   writeFile,
   rename,
   copy,
-  unlink
+  unlink,
+  makeSureDir,
+  makeSureFileDir
 }
