@@ -13,7 +13,8 @@ router.get('/config', (req, res) => {
     dbStorage: config.database.storage,
     exceptionPath: path.join(config.logdir, config.exceptionFilename),
     exceptionFilesize: config.exceptionFilesize,
-    cluster: config.cluster
+    cluster: config.cluster,
+    logLevel: config.appLogLevel
   }
   res.json(cfg)
 })

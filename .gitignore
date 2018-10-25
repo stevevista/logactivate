@@ -5,6 +5,8 @@ node_modules
 storage
 *.log
 release
+tmp
+*.sqlite
 tests/*
 !tests/*.js
 npm-debug.log

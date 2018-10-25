@@ -2,8 +2,10 @@ import React from 'react'
 import { Table, Icon, Modal } from 'antd'
 import axios from 'axios'
 import moment from 'moment'
+import { injectIntl } from 'react-intl'
+import { connect } from 'react-redux'
 
-export default class OTA extends React.Component {
+class Log extends React.Component {
   state = {
     data: [],
     pagination: {},
@@ -172,3 +174,13 @@ export default class OTA extends React.Component {
     })
   }
 }
+
+function mapStates (state) {
+  return {
+    authed: state.app.authed
+  }
+}
+
+export default injectIntl(connect(mapStates)(Log), {
+  withRef: true
+})

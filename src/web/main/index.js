@@ -1,5 +1,4 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { render } from 'react-dom'
 import store from './store'
 import { connect, Provider } from 'react-redux'
@@ -16,19 +15,13 @@ import Auth from './components/auth'
 moment.locale(store.getState().app.locale)
 
 class Root extends React.Component {
-  constructor () {
-    super()
-    this.state = {
-      authed: false
-    }
-  }
   render () {
     const { locale } = this.props
     return (
       <LocaleProvider locale={locales[locale].antd}>
         <IntlProvider locale={locale} messages={locales[locale].messages}>
           {
-            this.state.authed ? <App/> : <Auth onAuthed={() => this.setState({authed: true})}/>
+            this.props.authed.username ? <App/> : <Auth/>
           }
         </IntlProvider>
       </LocaleProvider>
@@ -36,13 +29,10 @@ class Root extends React.Component {
   }
 }
 
-Root.propTypes = {
-  locale: PropTypes.string
-}
-
 function mapStates (state) {
   return {
-    locale: state.app.locale
+    locale: state.app.locale,
+    authed: state.app.authed
   }
 }
 

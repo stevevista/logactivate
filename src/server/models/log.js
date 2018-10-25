@@ -34,8 +34,12 @@ function Files(sequelize, DataTypes) {
     timestamps: true
   })
 
+  db.constructStorePath = function (imei, filename) {
+    return path.join(config.logdir, imei, filename)
+  }
+
   db.prototype.storePath = function() {
-    return path.join(config.ota.logdir, this.imei, this.filename)
+    return db.constructStorePath(this.imei, this.filename)
   }
 
   db.prototype.fullDownloadURI = function(req) {

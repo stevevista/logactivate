@@ -2,22 +2,6 @@ const config = require('../config')
 const path = require('path')
 const url = require('url')
 
-function pattern(sequelize, DataTypes) {
-  const db = sequelize.define('ota_pattern', {
-    name: {
-      type: DataTypes.STRING(128),
-      primaryKey: true
-    },
-    pattern: DataTypes.STRING(512)
-  }, {
-    tableName: 'ota_pattern',
-    freezeTableName: true,
-    timestamps: true
-  })
-
-  return db
-}
-
 function packages(sequelize, DataTypes) {
   const db = sequelize.define('ota_packages', {
     name: DataTypes.STRING(128),
@@ -31,8 +15,12 @@ function packages(sequelize, DataTypes) {
     timestamps: true
   })
 
+  db.constructStorePath = function (filename) {
+    return path.join(config.ota.firmwareDir, filename)
+  }
+
   db.prototype.storePath = function() {
-    return path.join(config.ota.firmwareDir, this.filename)
+    return db.constructStorePath(this.filename)
   }
 
   db.prototype.fullDownloadURI = function(req) {
@@ -47,6 +35,5 @@ function packages(sequelize, DataTypes) {
 }
 
 module.exports = [
-  pattern,
   packages
 ]

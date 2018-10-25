@@ -1,7 +1,8 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { Form, Icon, Input, Button, message } from 'antd'
 import axios from 'axios'
+import { injectIntl } from 'react-intl'
+import { connect } from 'react-redux'
 
 const FormItem = Form.Item
 
@@ -14,8 +15,8 @@ class HorizontalLoginForm extends React.Component {
     // To disabled submit button at the beginning.
     this.props.form.validateFields()
     axios.get('/user/auth')
-      .then(() => {
-        this.props.onAuthed()
+      .then((res) => {
+        this.props.setAuthed(res.data)
       })
   }
 
@@ -25,8 +26,8 @@ class HorizontalLoginForm extends React.Component {
       if (!err) {
         console.log('Received values of form: ', values)
         axios.post('/user/auth', values)
-          .then(() => {
-            this.props.onAuthed()
+          .then((res) => {
+            this.props.setAuthed(res.data)
           })
           .catch(e => {
             console.log(e.response)
@@ -82,12 +83,24 @@ class HorizontalLoginForm extends React.Component {
   }
 }
 
-HorizontalLoginForm.propTypes = {
-  onAuthed: PropTypes.func,
-  form: PropTypes.object
+const WrappedHorizontalLoginForm = Form.create()(HorizontalLoginForm)
+
+function mapStates (state) {
+  return {
+    authed: state.app.authed
+  }
 }
 
-const WrappedHorizontalLoginForm = Form.create()(HorizontalLoginForm)
+function mapDispatchs (dispatch) {
+  return {
+    setAuthed: (authed) => dispatch({type: 'app/setAuthed', authed})
+  }
+}
+
+const LoginForm = injectIntl(connect(mapStates, mapDispatchs)(WrappedHorizontalLoginForm), {
+  withRef: true
+})
+
 
 export default class Settings extends React.Component {
   render () {
@@ -100,7 +113,7 @@ export default class Settings extends React.Component {
         verticalAlign: 'middle',
         lineHeight: 200
       }}>
-        <WrappedHorizontalLoginForm onAuthed={this.props.onAuthed}/>
+        <LoginForm/>
       </div>
     )
   }

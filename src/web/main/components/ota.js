@@ -2,8 +2,10 @@ import React from 'react'
 import { Table, Upload, Button, Icon, message, Input, Modal } from 'antd'
 import axios from 'axios'
 import moment from 'moment'
+import { injectIntl } from 'react-intl'
+import { connect } from 'react-redux'
 
-export default class OTA extends React.Component {
+class OTA extends React.Component {
   state = {
     data: [],
     pagination: {},
@@ -38,7 +40,7 @@ export default class OTA extends React.Component {
     render: (text, record) => (
       <div>
         <a href={`/ota/download/${record.filename}`}><Icon type="download" className="table-button"/></a>
-        <Icon type="delete" className="table-button delete" onClick={() => this.delete(record.id)}/>
+        {this.props.authed.level < 2 && <Icon type="delete" className="table-button delete" onClick={() => this.delete(record.id)}/>}
       </div>
     )
   }]
@@ -72,7 +74,7 @@ export default class OTA extends React.Component {
           pagination={this.state.pagination}
           loading={this.state.loading}
           onChange={this.handleTableChange} 
-          footer={this.footer}
+          footer={this.props.authed.level < 2 ? this.footer : () => null}
         />
       </div>
     )
@@ -207,3 +209,13 @@ export default class OTA extends React.Component {
     })
   }
 }
+
+function mapStates (state) {
+  return {
+    authed: state.app.authed
+  }
+}
+
+export default injectIntl(connect(mapStates)(OTA), {
+  withRef: true
+})

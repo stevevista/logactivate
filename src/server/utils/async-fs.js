@@ -54,18 +54,22 @@ function rename (oldPath, newPath) {
   return new Promise((resolve, reject) => {
     fs.rename(oldPath, newPath, async err => {
       if (err) {
-        try {
-          await copy(oldPath, newPath)
-          const r = await unlink(oldPath)
-          resolve(r)
-        } catch (e) {
-          reject(e)
-        }
+        reject(err)
       } else {
         resolve()
       }
     })
   })
+}
+
+async function forceMove(oldPath, newPath) {
+  await makeSureFileDir(newPath)
+  try {
+    await rename(oldPath, newPath)
+  } catch (e) {
+    await copy(oldPath, newPath)
+    unlink(oldPath)
+  }
 }
 
 function copy (src, dest) {
@@ -115,6 +119,7 @@ module.exports = {
   mkdir,
   writeFile,
   rename,
+  forceMove,
   copy,
   unlink,
   makeSureDir,

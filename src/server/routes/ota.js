@@ -1,32 +1,25 @@
 'use strict'
 const Router = require('express-promise-router')
-const path = require('path')
-const yaml = require('js-yaml')
-const fsOrgi = require('fs')
 const fs = require('../utils/async-fs')
 const uuid = require('uuid/v1')
-const config = require('../config')
 const Joi = require('joi')
 const {validate} = require('../utils/validate')
 const db = require('../models')
+const {constructQuerySort} = require('../utils/dbhelper')
 const multer = require('multer')
 const {authenticateRequird, authLevel} = require('../auth')
-const url = require('url')
-const Op = db.Sequelize.Op
+const config = require('../config')
 
 const router = Router()
 
-const storage = multer.diskStorage({})
-const upload = multer({storage})
+const upload = multer({dest: config.tmpdir})
 
-router.get('/packages', authenticateRequird(), authLevel(0), async (req, res) => {
+router.get('/packages', authenticateRequird(), authLevel('reporter'), async (req, res) => {
   const params = validate(req.query, {
     results: Joi.number().integer().default(20),
     page: Joi.number().integer().default(1),
     sortField: Joi.string(),
-    sortOrder: Joi.string(),
-    name: Joi.array().items(Joi.string()),
-    address: Joi.array().items(Joi.string())
+    sortOrder: Joi.string()
   })
 
   const offset = (params.page - 1) * params.results
@@ -34,31 +27,8 @@ router.get('/packages', authenticateRequird(), authLevel(0), async (req, res) =>
     limit: params.results,
     offset
   }
-  if (params.sortField) {
-    const order = [params.sortField]
-    if (params.sortOrder === 'descend') {
-      order.push('DESC')
-    }
-    option.order = [order]
-  }
 
-  if (params.name) {
-    if (!option.where) {
-      option.where = {}
-    }
-    option.where['name'] = {
-      [Op.or]: params.name.map(n => ({[Op.like]: `%${n}%`}))
-    }
-  }
-
-  if (params.desc) {
-    if (!option.where) {
-      option.where = {}
-    }
-    option.where['description'] = {
-      [Op.or]: params.desc.map(n => ({[Op.like]: `%${n}%`}))
-    }
-  }
+  constructQuerySort(option, params.sortField, params.sortOrder)
 
   const out = await db.ota_packages.findAndCountAll(option)
   
@@ -70,7 +40,7 @@ router.get('/packages', authenticateRequird(), authLevel(0), async (req, res) =>
 
 router.post('/upload', 
   authenticateRequird(), 
-  authLevel(0),
+  authLevel('admin'),
   upload.single('file'), 
   async (req, res) => {
 
@@ -80,9 +50,8 @@ router.post('/upload',
     })
 
     const destname = uuid()
-    const dest = path.join(config.ota.firmwareDir, destname)
-    await fs.makeSureFileDir(dest)
-    await fs.rename(req.file.path, dest)
+    const dest = db.ota_packages.constructStorePath(destname)
+    await fs.forceMove(req.file.path, dest)
 
     await db.ota_packages.create({
       name: req.file.originalname,
@@ -94,7 +63,7 @@ router.post('/upload',
   }
 )
 
-router.post('/delete/:id([0-9]+)', authenticateRequird(), authLevel(0), async (req, res) => {
+router.post('/delete/:id([0-9]+)', authenticateRequird(), authLevel('admin'), async (req, res) => {
   const id = +req.params.id
   const r = await db.ota_packages.findOne({
     where: {id}
@@ -121,19 +90,8 @@ router.get('/versions', async (req, res) => {
   res.json(results)
 })
 
-router.get('/version', (req, res) => {
-  const cfgpath = path.join(config.configDir, 'ota.yml')
-  const otainfo = yaml.safeLoad(fsOrgi.readFileSync(cfgpath, 'utf8'))
-  otainfo.firmware = url.format({
-    protocol: req.protocol,
-    host: req.get('host'),
-    pathname: '/ota/download/' + otainfo.firmware
-  })
-  res.json(otainfo)
-})
-
 router.get('/download/:firmware', (req, res) => {
-  const filepath = path.join(config.ota.firmwareDir, req.params.firmware)
+  const filepath = db.ota_packages.constructStorePath(req.params.firmware)
   res.download(filepath, req.params.firmware, err => {
     if (err) {
       console.log(err)

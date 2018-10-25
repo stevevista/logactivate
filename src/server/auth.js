@@ -1,5 +1,7 @@
+'use strict'
 const jwt = require('jsonwebtoken')
 const config = require('./config')
+const errors = require('./utils/errors')
 
 function authToken () {
   return function (req, res, next) {
@@ -38,20 +40,45 @@ function authenticateRequird () {
   }
 }
 
+const levels = {
+  'super': 0,
+  'admin': 1,
+  'reporter': 2,
+  'customer': 3,
+  'vistor': 4
+}
+
+function mapLevel(s) {
+  if (!(s in levels)) return 100
+  return levels[s]
+}
+
 function authLevel(level) {
+  if (typeof level === 'string') {
+    level = mapLevel(level)
+  }
   return function (req, res, next) {
-    if (req.decoded_token.level > level) {
-      const err = Error(`auth level need above ${level}`)
-      err.status = 401
-      throw err
+    if (typeof req.decoded_token.level !== 'number' || req.decoded_token.level > level) {
+      throw errors.AuthError(`auth level need above ${level}`)
     }
     next()
   }
+}
+
+function isSuper(obj) {
+  return obj.level === 0
+}
+
+function higherLevelThan(obj, level) {
+  return typeof obj.level === 'number' && obj.level < level
 }
 
 module.exports = {
   authToken,
   authenticateRequird,
   signToken,
-  authLevel
+  authLevel,
+  isSuper,
+  mapLevel,
+  higherLevelThan
 }

@@ -1,44 +1,51 @@
-## install
-### Prerequisites
+# Develop
+## Prerequisites
 - node >= 8.11.0
 - gcc build tools or MSVC 2015/2017
-- direct access to internet
+- MySQL/Postgre/MSSQL (only if not using sqlite)
 
 Please read the guide on Nodejs.org to learn how to install node on linux or Windows
 
-### Steps
+## Install and run
 ```
 $: git clone git@github.com:stevevista/logactivate.git 
-# or download zipped file
 $: cd logactivate
-$: npm run setup
-
-```
-
-##  Start server
-```
-$: cd logactivate
+$: npm i
+$: npm run build
 $: node .
+
 ```
 
-##  Stop server
+## Run in development
 ```
-CTRL + C
-```
-## Prebuilts
-logactivate-linux-x64-x.x.x  Linux 64bit system
-logactivate-win32-x.x.x.exe  Win32 system
-
-just run prebuilts in console, dont missing config directory
-```
-C:\dev\logactivate>logactivate-win32-1.0.0.exe
-http server on 3000, on 4 cores
-...
+npm run dev
 ```
 
-## Configuration
-Edit config/base.yml or config/production.yml, modifying server port, log file storage path, and etc.
-default server port is 3000
+It should display `http server on 3000, on 4 cores`
+
+If stucked on installing packages, try swicth to `npm i --registry https://registry.npm.taobao.org`
+
+##  Pack to single executable
+```
+$: npm run pack
+```
+The executable binaries will be generated in ./release
+
+## Server log
+the server log is avaible as logactivate.log
+
+# Configuration
+* config/base.yml
+
+  basic configuration, such as server port, storage path, and etc.
+* config/production.yml
+
+  configuration for production, will override basic configuration
+* config/development.yml
+
+  configuration for development, will override basic configuration
+
+examples:
 ```
 port: 3000
 logdir: storage
@@ -47,15 +54,24 @@ exceptionFilesize: 1M
 exceptionBackups: 100
 ```
 
-## Server log
-the server log is logactivate.log, default level is warning, you can modify the level in config
-
-## API
+# API
+## Log
 * http://[IP Address]:[port]/log/report
   - method: POST
   - body: should be json encoded (application/json) or urlencoded
   - response: on success, HTTP response status will be 200, othewise, the status incidates error number, and responseBody contain json message { message: xxxxx }
   - notice: All information in http body will be append to logfiles (default is storage/exceptions.log)
+
+------------------------------------------------------
+### report optional fields
+* imei
+* sn
+* latitude
+* longitude
+* sw_version
+* hw_version
+* bb_version
+------------------------------------------------------
 
 * http://[IP Address]:[port]/log/upload
   - method: POST
@@ -101,20 +117,12 @@ curl -F "file=@data.bin" -F "imei=222222222" -F "trunks=N" -F "eot=1" http://loc
 * the server will merge all trunks to one file
 
 ## OTA
-### Way 1: Static configure
-* modiy config/ota.yml and restart server
-* query version by /ota/version
-```
-{"version":"1.0.0","firmware":"http://localhost:3001/ota/download/system-1.0.0.pkg","description":"xxxx"}
-```
-* download firmware thorugh url indicated
-
-### Way 2: Web admin
-* http://localhost:3001/main.html
-* login with sysadmin, pasword: sysadmin (configured in config/base.yml)
+### Web admin
+* http://localhost:3001/
+* login with sysadmin, password: sysadmin (configured in config/base.yml)
 * in OTA page, upload the firmware package
 
-* query version by /ota/versions
+* query version by http://localhost:3001/ota/versions
 ```
 [{"name":"package.bin","version":"werwer","description":"werwr","updatedAt":"2018-10-23T12:45:22.986Z","firmware":"http://localhost:3001/ota/download/818d6680-d6c1-11e8-876f-35038de47c60"}, {...}, {...}]
 
@@ -125,6 +133,8 @@ curl -F "file=@data.bin" -F "imei=222222222" -F "trunks=N" -F "eot=1" http://loc
 * connection broken, remember the last write position LAST_POSITION
 * download request again, but set HTTP headers 
 ```
-Range: bytes=LAST_POSITION-
+Range: bytes=12345678-
 ```
 * append bytes to file
+
+# Web interface

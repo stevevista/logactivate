@@ -2,6 +2,7 @@
 const http = require('http')
 const path = require('path')
 const express = require('express')
+const compression = require('compression')
 const cluster = require('cluster')
 const bodyParser = require('body-parser')
 const cookieSession = require('cookie-session')
@@ -30,9 +31,13 @@ app.use(cookieSession({
   maxAge: config.session.maxAge
 }))
 
-app.use('/', express.static(path.join(__dirname, '../public'), {
+app.use('/', compression(), express.static(path.join(__dirname, '../public'), {
   maxAge: '1d'
 }))
+
+app.get('/', (req, res) => {
+  res.redirect('/main.html')
+})
 
 app.use(authToken())
 app.use(require('./routes'))
@@ -40,7 +45,9 @@ app.use(require('./routes'))
 // handle errors
 app.use((err, req, res, next) => {
   res.status(err.status || 500).json({message: err.message})
-  logger.fatal(req.path, err.message)
+  if (err.status !== 401) {
+    logger.fatal(req.path, err.message)
+  }
 })
 
 // handle 404

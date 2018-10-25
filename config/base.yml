@@ -17,7 +17,6 @@ session:
   maxAge: '24h'
 ota:
   firmwareDir: storage/firmwares
-users:
-  sysadmin:
-    level: 0
-    password: sysadmin
+sysadmin:
+  username: sysadmin
+  password: sysadmin

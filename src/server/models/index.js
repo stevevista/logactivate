@@ -1,18 +1,21 @@
 'use strict'
 const cluster = require('cluster')
 const Sequelize = require('sequelize')
-const config = require('../config').database
+const config = require('../config')
 const logger = require('log4js').getLogger()
+const bcrypt = require('bcrypt')
 
 const defines = [
   require('./log'),
-  require('./ota')
+  require('./ota'),
+  require('./user')
 ]
 
 const db = {}
-const sequelize = new Sequelize(config.database, config.username, config.password,
+const cfg = config.database
+const sequelize = new Sequelize(cfg.database, cfg.username, cfg.password,
   {
-    ...config,
+    ...cfg,
     logging: sql => logger.info(sql)
   })
 
@@ -40,8 +43,22 @@ Object.keys(db).forEach(modelName => {
 db.sequelize = sequelize
 db.Sequelize = Sequelize
 
+async function initializeDb() {
+  await sequelize.sync({logging: (log) => logger.info(log), force: false, alter: false})
+  logger.info('db initialized!')
+  const userCount = await db.users.count()
+  if (userCount === 0) {
+    const hashed = await bcrypt.hash(config.sysadmin.password, 10)
+    await db.users.create({
+      username: config.sysadmin.username,
+      password: hashed,
+      level: 0
+    })
+  }
+}
+
 if (cluster.isMaster) {
-  sequelize.sync({logging: (log) => logger.info(log), force: false, alter: process.env.NODE_ENV === 'development'})
+  initializeDb()
 }
 
 module.exports = db

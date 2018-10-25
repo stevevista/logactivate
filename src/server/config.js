@@ -6,47 +6,54 @@ const yaml = require('js-yaml')
 const cluster = require('cluster')
 const log4js = require('log4js')
 
+let workDir = process.cwd()
+for (let i = 0; i < process.argv.length; i++) {
+  if (process.argv[i] === '--work-dir') {
+    workDir = process.argv[i + 1]
+    break
+  }
+}
+
 function requireJs (path) {
   return yaml.safeLoad(fs.readFileSync(path, 'utf8'))
 }
 
-const configDir = path.join(process.cwd(), 'config')
+const configDir = path.join(workDir, 'config')
 const basConfigPath = path.join(configDir, 'base.yml')
 const envConfigPath = path.join(configDir, process.env.NODE_ENV + '.yml')
+
+let config = {
+  configDir,
+  logdir: 'storage',
+  tmpdir: 'tmp'
+}
 
 if (!fs.existsSync(basConfigPath)) {
   console.error(`Missing config file: ${basConfigPath}`)
   process.exit(1)
 }
 
-let config = requireJs(basConfigPath)
+config = _.merge(config, requireJs(basConfigPath))
 if (fs.existsSync(envConfigPath)) {
   config = _.merge(config, requireJs(envConfigPath))
 }
 
-if (!config.configDir) {
-  config.configDir = configDir
-}
-
-// resolve paths
-if (!config.logdir) {
-  config.logdir = 'storage'
-}
-
 if (config.logdir[0] !== '/') {
-  config.logdir = path.join(process.cwd(), config.logdir)
+  config.logdir = path.join(workDir, config.logdir)
 }
 
-function resolvePath (obj, key, cwd) {
+function resolvePath (obj, key, basedir) {
   if (obj && key in obj) {
     if (obj[key][0] !== '/') {
-      obj[key] = path.join(cwd || config.logdir, obj[key])
+      obj[key] = path.join(basedir, obj[key])
     }
   }
 }
 
-resolvePath(config.database, 'storage')
-resolvePath(config.ota, 'firmwareDir', process.cwd())
+resolvePath(config.database, 'storage', workDir)
+resolvePath(config.ota, 'firmwareDir', workDir)
+resolvePath(config, 'appLogFilename', workDir)
+resolvePath(config, 'tmpdir', workDir)
 
 // default log option
 if (!config.exceptionFilename) {
@@ -87,6 +94,15 @@ if (cluster.isMaster) {
       fs.mkdirSync(config.logdir)
     } catch (e) {
       console.error('cannot initialize storage', e.message)
+      process.exit(1)
+    }
+  }
+
+  if (!fs.existsSync(config.tmpdir)) {
+    try {
+      fs.mkdirSync(config.tmpdir)
+    } catch (e) {
+      console.error('cannot initialize tmpdir', e.message)
       process.exit(1)
     }
   }
