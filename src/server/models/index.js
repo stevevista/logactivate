@@ -3,7 +3,6 @@ const cluster = require('cluster')
 const Sequelize = require('sequelize')
 const config = require('../config')
 const logger = require('log4js').getLogger()
-const bcrypt = require('bcrypt')
 
 const defines = [
   require('./log'),
@@ -48,10 +47,9 @@ async function initializeDb() {
   logger.info('db initialized!')
   const userCount = await db.users.count()
   if (userCount === 0) {
-    const hashed = await bcrypt.hash(config.sysadmin.password, 10)
-    await db.users.create({
+    await db.users.createEx({
       username: config.sysadmin.username,
-      password: hashed,
+      password: config.sysadmin.password,
       level: 0
     })
   }

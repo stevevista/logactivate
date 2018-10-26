@@ -5,6 +5,7 @@ const fs = require('fs')
 const yaml = require('js-yaml')
 const cluster = require('cluster')
 const log4js = require('log4js')
+const ms = require('ms')
 
 let workDir = process.cwd()
 for (let i = 0; i < process.argv.length; i++) {
@@ -51,6 +52,10 @@ function resolvePath (obj, key, basedir) {
       obj[key] = path.join(basedir, obj[key])
     }
   }
+}
+
+if (typeof config.session.maxAge === 'string') {
+  config.session.maxAge = ms(config.session.maxAge)
 }
 
 resolvePath(config.database, 'storage', workDir)

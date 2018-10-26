@@ -3,7 +3,6 @@ const Router = require('express-promise-router')
 const {authenticateRequird, authLevel, signToken, isSuper, higherLevelThan} = require('../auth')
 const {validate} = require('../utils/validate')
 const Joi = require('joi')
-const bcrypt = require('bcrypt')
 const db = require('../models')
 const errors = require('../utils/errors')
 const Op = db.Sequelize.Op
@@ -27,7 +26,7 @@ router.post('/auth', async (req, res) => {
   })
 
   let authed = false
-  if (dbuser) {
+  if (dbuser && !dbuser.disabled) {
     const ret = await dbuser.checkPassword(params.password)
     if (ret) {
       authed = true
@@ -69,9 +68,8 @@ router.post('/password', authenticateRequird(), async (req, res) => {
   const ret = await dbuser.checkPassword(params.old_password)
   errors.assert(ret, 'wrong password', 401)
 
-  const hashed = await bcrypt.hash(params.password, 10)
-  await db.users.update({
-    password: hashed
+  await db.users.updateEx({
+    password: params.password
   }, {
     where: {
       username: req.decoded_token.username
@@ -88,11 +86,10 @@ router.post('/:username/add', authenticateRequird(), authLevel('admin'), async (
 
   errors.assert(higherLevelThan(req.decoded_token, params.level), 'bad auth level', 401)
 
-  const hashed = await bcrypt.hash(params.password, 10)
   try {
-    await db.users.create({
+    await db.users.createEx({
       username: req.params.username,
-      password: hashed,
+      password: params.password,
       level: params.level,
       creator: req.decoded_token.username
     })
@@ -106,6 +103,16 @@ router.post('/:username/add', authenticateRequird(), authLevel('admin'), async (
   res.json({})
 })
 
+function queryAdminableUser(req, option, username) {
+  option.where = {
+    username
+  }
+
+  if (!isSuper(req.decoded_token)) {
+    option.where.creator = req.decoded_token.username
+  }
+}
+
 router.post('/:username/update', authenticateRequird(), authLevel('admin'), async (req, res) => {
   const params = validate(req.body, {
     password: Joi.string(),
@@ -118,33 +125,22 @@ router.post('/:username/update', authenticateRequird(), authLevel('admin'), asyn
     level: params.level
   }
   if (params.password) {
-    fields.password = await bcrypt.hash(params.password, 10)
+    fields.password = params.password
   }
 
-  const option = {
-    where: {
-      username: req.params.username
-    }
-  }
-  if (!isSuper(req.decoded_token)) {
-    option.where.creator = req.decoded_token.username
-  }
+  const option = {}
 
-  await db.users.update(fields, option)
+  queryAdminableUser(req, option, req.params.username)
+  await db.users.updateEx(fields, option)
 
   res.json({})
 })
 
 router.post('/:username/del', authenticateRequird(), authLevel('admin'), async (req, res) => {
 
-  const option = {
-    where: {
-      username: req.params.username
-    }
-  }
-  if (!isSuper(req.decoded_token)) {
-    option.where.creator = req.decoded_token.username
-  }
+  const option = {}
+
+  queryAdminableUser(req, option, req.params.username)
   await db.users.destroy(option)
 
   res.json({})
