@@ -5,7 +5,7 @@ const express = require('express')
 const compression = require('compression')
 const cluster = require('cluster')
 const bodyParser = require('body-parser')
-const cookieSession = require('cookie-session')
+const cookieParser = require('cookie-parser')
 const logact = require('./logact')
 const config = require('./config')
 require('./models')
@@ -22,14 +22,9 @@ logact.configure({
 
 const app = express()
 
+app.use(cookieParser())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
-
-app.use(cookieSession({
-  name: 'session',
-  secret: config.session.secrets,
-  maxAge: config.session.maxAge
-}))
 
 app.use('/', compression(), express.static(path.join(__dirname, '../public'), {
   maxAge: '1d'

@@ -25,7 +25,10 @@ const envConfigPath = path.join(configDir, process.env.NODE_ENV + '.yml')
 let config = {
   configDir,
   logdir: 'storage',
-  tmpdir: 'tmp'
+  tmpdir: 'tmp',
+  session: {
+    maxAge: 24 * 60 * 60 * 1000
+  }
 }
 
 if (!fs.existsSync(basConfigPath)) {

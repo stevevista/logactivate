@@ -8,7 +8,7 @@ function authToken () {
     const token = (req.query && req.query.access_token) || 
       (req.body && req.body.access_token) || 
       req.headers['x-access-token'] ||
-      (req.session && req.session.access_token)
+      (req.cookies && req.cookies.access_token)
 
     if (!token) {
       return next()
@@ -21,12 +21,11 @@ function authToken () {
   }
 }
 
-function signToken (obj, req) {
-  const token = jwt.sign(obj, config.session.secrets, {expiresIn: '3d'})
-  if (req) {
-    req.session.access_token = token
+function signToken (obj, res) {
+  const signedTok = jwt.sign(obj, config.session.secrets, {expiresIn: config.session.maxAge})
+  if (res) {
+    res.cookie('access_token', signedTok, { maxAge: config.session.maxAge })
   }
-  return token
 }
 
 function authenticateRequird () {

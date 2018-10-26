@@ -11,10 +11,7 @@ const Op = db.Sequelize.Op
 const router = Router()
 
 router.get('/auth', authenticateRequird(), (req, res) => {
-  res.json({
-    username: req.decoded_token.username,
-    level: req.decoded_token.level
-  })
+  res.json(req.decoded_token)
 })
 
 router.post('/auth', async (req, res) => {
@@ -41,16 +38,18 @@ router.post('/auth', async (req, res) => {
     throw Error('wrong user or password')
   }
 
-  signToken({
+  const tok = {
+    id: dbuser.id,
     username: dbuser.username,
     level: dbuser.level
-  }, req)
+  }
+  signToken(tok, res)
 
-  res.json({username: dbuser.username, level: dbuser.level})
+  res.json(tok)
 })
 
 router.post('/logout', (req, res) => {
-  req.session.access_token = undefined
+  res.clearCookie('access_token')
   res.json({})
 })
 
