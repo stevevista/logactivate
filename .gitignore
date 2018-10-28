@@ -9,6 +9,8 @@ tmp
 *.sqlite
 tests/*
 !tests/*.js
+ssl
+package-lock.json
 npm-debug.log
 npm-debug.log.*
 thumbs.db

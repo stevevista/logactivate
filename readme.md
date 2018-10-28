@@ -45,13 +45,38 @@ the server log is avaible as logactivate.log
 
   configuration for development, will override basic configuration
 
-examples:
+full configurations:
 ```
-port: 3000
+port: 3001
+cluster: true
 logdir: storage
+tmpdir: tmp
+ssldir: ssl
+ssl: true
 exceptionFilename: exceptions.log
 exceptionFilesize: 1M
 exceptionBackups: 100
+appLogLevel: warn
+appLogSize: 31457280
+appLogFilename: logactivate.log
+exceptionFilename: exceptions.log
+exceptionFilesize: 10M
+database:
+  database: 
+  username:
+  password:
+  storage: database.sqlite
+  host: localhost
+  dialect: sqlite,
+  operatorsAliases: false
+session:
+  secrets: abcd.1234
+  maxAge: 24 * 60 * 60 * 1000
+ota:
+  firmwareDir: storage/firmwares
+sysadmin:
+  username: sysadmin
+  password: sysadmin
 ```
 
 # API
@@ -59,7 +84,7 @@ exceptionBackups: 100
 * http://[IP Address]:[port]/log/report
   - method: POST
   - body: should be json encoded (application/json) or urlencoded
-  - response: on success, HTTP response status will be 200, othewise, the status incidates error number, and responseBody contain json message { message: xxxxx }
+  - response: on success, HTTP response status will be 200, othewise, the status incidates error number, and responseBody contain error message
   - notice: All information in http body will be append to logfiles (default is storage/exceptions.log)
 
 ------------------------------------------------------
@@ -76,7 +101,7 @@ exceptionBackups: 100
 * http://[IP Address]:[port]/log/upload
   - method: POST
   - body: multipart format, contain field imei && a attached file
-  - response: on success, HTTP response status will be 200, othewise, the status incidates error number, and responseBody contain json message { message: xxxxx }
+  - response: on success, HTTP response status will be 200, othewise, the status incidates error number, and responseBody contain error message
   - notice: the file will be stored in storage/[imei]/orginalFilename
 #### examples
 - test with curl
@@ -84,13 +109,13 @@ exceptionBackups: 100
 curl -d "imei=777&exception=ddsfsdf" "http://localhost:3001/log/report"
 {}
 
-curl -F "file=@card.txt" -F "imei=222222222" http://localhost:3001/log/upload
+curl -F "file=@card.txt" -F "imei=777" http://localhost:3001/log/upload
 {}
 
 curl -F "file=@card.txt" http://localhost:3001/log/upload
 {"message":"invalid imei parameters"}
 ```
-suppose the card.txt content is 'data', the psot body data will be
+suppose the card.txt content is 'data', the HTTP body data will be
 ```
 --------------------------8d7d3d79e075f69d
 Content-Disposition: form-data; name="file"; filename="card.txt"
@@ -127,7 +152,7 @@ curl -F "file=@data.bin" -F "imei=222222222" -F "trunks=N" -F "eot=1" http://loc
 [{"name":"package.bin","version":"werwer","description":"werwr","updatedAt":"2018-10-23T12:45:22.986Z","firmware":"http://localhost:3001/ota/download/818d6680-d6c1-11e8-876f-35038de47c60"}, {...}, {...}]
 
 ```
-* download firmware thorugh url indicated
+* download firmware by url indicated
 ### Continue download
 * download firmware, write bytes to file
 * connection broken, remember the last write position LAST_POSITION
@@ -136,5 +161,15 @@ curl -F "file=@data.bin" -F "imei=222222222" -F "trunks=N" -F "eot=1" http://loc
 Range: bytes=12345678-
 ```
 * append bytes to file
+
+## Security
+### the following APIs is unsafe. restricting access will be considered in future
+* /log/report
+* /log/upload
+* /ota/version
+* /ota/versions
+* /ota/download/...
+### HTTPS
+put certification files in ssl directory to enable SSL
 
 # Web interface

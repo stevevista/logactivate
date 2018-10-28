@@ -1,26 +1,25 @@
 'use strict'
-const Router = require('express-promise-router')
-const multer = require('multer')
+const Router = require('koa-router')
+const koaBody = require('koa-body')
 const Joi = require('joi')
+const Sequelize = require('sequelize')
 const path = require('path')
+const send = require('koa-send')
 const {validate} = require('../utils/validate')
 const fs = require('../utils/async-fs')
 const logact = require('../logact')
-const db = require('../models')
 const {constructQuerySort, constructQueryFilter} = require('../utils/dbhelper')
-const {authenticateRequird, authLevel} = require('../auth')
+const {authLevel} = require('../auth')
 const config = require('../config')
 
 const router = Router()
 
-const upload = multer({dest: config.tmpdir})
-
-router.get('/', (req, res) => {
-  res.send('Hello LogActivate!')
+router.get('/', ctx => {
+  ctx.body = 'Hello LogActivate!'
 })
 
 const ObjectAttrs = [
-  ['imei', 'imei', '--'],
+  ['imei', 'imei', ''],
   ['sn', 'sn', ''],
   ['latitude', 'latitude', 0.0],
   ['longitude', 'longitude', 0.0],
@@ -29,17 +28,22 @@ const ObjectAttrs = [
   ['bbVersion', 'bb_version', '']
 ]
 
-router.post('/report', async (req, res) => {
-  let data = req.body
-  if (typeof req.body.object === 'object') {
+router.post('/report', async ctx => {
+  let data = ctx.request.body
+  if (typeof data.object === 'object') {
     // log cloud style exceptions
-    data = req.body.object
+    data = data.object
+  } else if (typeof data.object === 'string') {
+    // log cloud style exceptions
+    try {
+      data = JSON.parse(data.object)
+    } catch (e) {
+      // pass
+    }
   }
 
-  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
-
   const props = {
-    ip
+    ip: ctx.ip
   }
   for (const attr of ObjectAttrs) {
     props[attr[0]] = data[attr[1]] || attr[2]
@@ -47,67 +51,76 @@ router.post('/report', async (req, res) => {
   }
 
   props.data = JSON.stringify(data)
-  await db.log.create(props)
+  await ctx.db.log.create(props)
 
   logact.log('exception', props)
   
-  res.json({})
+  ctx.body = {}
 })
 
 function fileTrunkPath(imei, filename, trunks) {
   return path.join(config.tmpdir, `${imei}.${filename}.${trunks}`)
 }
 
-router.post('/upload', upload.single('file'), async (req, res) => {
-  const params = validate(req.body, {
+router.post('/upload', koaBody({
+  multipart: true,
+  formidable: {
+    uploadDir: config.tmpdir
+  }
+}), async ctx => {
+  const params = validate(ctx.request.body, {
     imei: Joi.string().alphanum().required(),
     trunks: Joi.number().integer().min(1),
     eot: Joi.number().integer()
   })
 
-  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
-  const dest = db.log_files.constructStorePath(params.imei, req.file.originalname)
+  const file = ctx.request.files.file
+  const ip = ctx.ip
+  const dest = ctx.db.log_files.constructStorePath(params.imei, file.name)
+
+  const trunkFiles = []
 
   if (params.trunks) {
     if (!params.eot) {
       // don't move to dest yet
-      await fs.rename(req.file.path, fileTrunkPath(params.imei, req.file.originalname, params.trunks))
-      return res.json({})
+      await fs.rename(file.path, fileTrunkPath(params.imei, file.name, params.trunks))
+      ctx.body = {}
+      return
     } else {
-      const srcs = []
       for (let i = 1; i < params.trunks; i++) {
-        srcs.push(fileTrunkPath(params.imei, req.file.originalname, i))
+        trunkFiles.push(fileTrunkPath(params.imei, file.name, i))
       }
-      srcs.push(req.file.path)
+      trunkFiles.push(file.path)
 
       await fs.makeSureFileDir(dest)
-      await fs.copy(srcs, dest)
-      // remove old files
-      for (const src of srcs) {
-        await fs.unlink(src)
-      }
+      await fs.copy(trunkFiles, dest)
     }
   } else {
-    await fs.forceMove(req.file.path, dest)
+    await fs.forceMove(file.path, dest)
   }
 
-  await db.log_files.create({
+  await ctx.db.log_files.create({
     ip,
     imei: params.imei,
-    filename: req.file.originalname
+    filename: file.name
   })
-  res.json({})
+  ctx.body = {}
+
+  // remove trunks after response to user
+  for (const f of trunkFiles) {
+    await fs.unlink(f)
+  }
 })
 
-router.get('/exceptions', authenticateRequird(), authLevel('reporter'), async (req, res) => {
-  const params = validate(req.query, {
+router.get('/exceptions', authLevel('reporter'), async ctx => {
+  const params = validate(ctx.query, {
     results: Joi.number().integer().default(20),
     page: Joi.number().integer().default(1),
     sortField: Joi.string(),
     sortOrder: Joi.string(),
-    ip: Joi.array().items(Joi.string()),
-    imei: Joi.array().items(Joi.string()),
-    swVersion: Joi.array().items(Joi.string())
+    'ip[]': [Joi.string(), Joi.array().items(Joi.string())],
+    'imei[]': [Joi.string(), Joi.array().items(Joi.string())],
+    'swVersion[]': [Joi.string(), Joi.array().items(Joi.string())]
   })
 
   const offset = (params.page - 1) * params.results
@@ -117,50 +130,46 @@ router.get('/exceptions', authenticateRequird(), authLevel('reporter'), async (r
   }
 
   constructQuerySort(option, params.sortField, params.sortOrder)
-  constructQueryFilter(option, params.ip, 'ip', true)
-  constructQueryFilter(option, params.imei, 'imei', true)
-  constructQueryFilter(option, params.swVersion, 'swVersion', true)
+  constructQueryFilter(option, params['ip[]'], 'ip', true)
+  constructQueryFilter(option, params['imei[]'], 'imei', true)
+  constructQueryFilter(option, params['swVersion[]'], 'swVersion', true)
 
-  const ips = await db.log.findAll({
-    attributes: [[db.Sequelize.fn('DISTINCT', db.Sequelize.col('ip')), 'ip']]
+  const ips = await ctx.db.log.findAll({
+    attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('ip')), 'ip']]
   })
-  const imeis = await db.log.findAll({
-    attributes: [[db.Sequelize.fn('DISTINCT', db.Sequelize.col('imei')), 'imei']]
+  const imeis = await ctx.db.log.findAll({
+    attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('imei')), 'imei']]
   })
-  const versions = await db.log.findAll({
-    attributes: [[db.Sequelize.fn('DISTINCT', db.Sequelize.col('swVersion')), 'swVersion']]
+  const versions = await ctx.db.log.findAll({
+    attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('swVersion')), 'swVersion']]
   })
-  const out = await db.log.findAndCountAll(option)
+  const out = await ctx.db.log.findAndCountAll(option)
   
-  res.json({
+  ctx.body = {
     totalCount: out.count,
     results: out.rows,
-    ips: ips.map(r => r.ip),
-    imeis: imeis.map(r => r.imei),
-    versions: versions.map(r => r.swVersion)
-  })
+    ips: ips.map(r => r.ip).filter(r => r !== ''),
+    imeis: imeis.map(r => r.imei).filter(r => r !== ''),
+    versions: versions.map(r => r.swVersion).filter(r => r !== '')
+  }
 })
 
-router.get('/files/:imei', authenticateRequird(), authLevel('reporter'), async (req, res) => {
-  const out = await db.log_files.findAll({
-    where: {imei: req.params.imei}
+router.get('/files/:imei', authLevel('reporter'), async ctx => {
+  const out = await ctx.db.log_files.findAll({
+    where: {imei: ctx.params.imei}
   })
   const results = out.map(r => ({
     id: r.id,
     filename: r.filename,
-    url: r.fullDownloadURI(req)
+    url: r.fullDownloadURI(ctx)
   }))
-  res.json(results)
+  ctx.body = results
 })
 
-router.get('/download/:imei/:log', (req, res) => {
-  const filepath = db.log_files.constructStorePath(req.params.imei, req.params.log)
-  res.download(filepath, req.params.log, err => {
-    if (err) {
-      console.log(err)
-      res.status(err.status).end()
-    }
-  })
+router.get('/download/:imei/:log', authLevel('reporter'), async ctx => {
+  const filepath = ctx.db.log_files.constructStorePath(ctx.params.imei, ctx.params.log)
+  ctx.attachment(ctx.params.log)
+  await send(ctx, filepath, {root: '/'})
 })
 
 module.exports = router

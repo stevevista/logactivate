@@ -42,10 +42,10 @@ function Files(sequelize, DataTypes) {
     return db.constructStorePath(this.imei, this.filename)
   }
 
-  db.prototype.fullDownloadURI = function(req) {
+  db.prototype.fullDownloadURI = function(ctx) {
     return url.format({
-      protocol: req.protocol,
-      host: req.get('host'),
+      protocol: ctx.protocol,
+      host: ctx.host,
       pathname: '/log/download/' + this.imei + '/' + this.filename
     })
   }

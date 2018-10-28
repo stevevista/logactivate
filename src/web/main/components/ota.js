@@ -139,11 +139,12 @@ class OTA extends React.Component {
       .then(() => {
         this.refresh()
         message.success(`${this.state.edit_file.name} file uploaded successfully`)
+        this.setState({
+          uploading: false
+        })
       })
       .catch(e => {
         message.error(`${this.state.edit_file.name} file upload failed.`)
-      })
-      .finally(() => {
         this.setState({
           uploading: false
         })
@@ -161,7 +162,7 @@ class OTA extends React.Component {
     this.setState({ loading: true })
   
     axios.get('/ota/packages', {
-      params: {results: 10, ...params}
+      params: {results: 20, ...params}
     })
       .then(res => {
         const {data} = res
@@ -184,7 +185,7 @@ class OTA extends React.Component {
 
   refresh = () => {
     this.fetch({
-      results: this.state.pagination.pageSize || 10,
+      results: this.state.pagination.pageSize || 20,
       page: this.state.pagination.current,
       sortField: this.state.sorter.field,
       sortOrder: this.state.sorter.order,

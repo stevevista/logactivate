@@ -1,20 +1,24 @@
-// const fs = require('fs')
-// const path = require('path')
-const { Router } = require('express')
+'use strict'
+const Router = require('koa-router')
+const fs = require('fs')
+const path = require('path')
 
-const router = Router()
-/*
-fs.readdirSync(__dirname).forEach(file => {
-  if (file !== 'index.js') {
-    const subpath = file.replace(/(\.\/|\.js)/g, '')
-    const fullpath = path.join(__dirname, subpath)
-    router.use('/' + subpath, require(fullpath))
-  }
+const router = new Router()
+
+router.get('/', ctx => {
+  ctx.redirect('/main.html')
 })
-*/
-router.use('/log', require('./log'))
-router.use('/info', require('./info'))
-router.use('/ota', require('./ota'))
-router.use('/user', require('./user'))
+
+const files = fs.readdirSync(__dirname)
+
+for (const f of files) {
+  if (f === 'index.js') {
+    continue
+  }
+
+  const name = f.replace(/(\.\/|\.js)/g, '')
+  const subrouter = require(path.join(__dirname, f))
+  router.use('/' + name, subrouter.routes(), subrouter.allowedMethods())
+}
 
 module.exports = router

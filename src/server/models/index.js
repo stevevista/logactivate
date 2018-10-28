@@ -1,14 +1,23 @@
 'use strict'
 const cluster = require('cluster')
 const Sequelize = require('sequelize')
+const fs = require('fs')
+const path = require('path')
 const config = require('../config')
 const logger = require('log4js').getLogger()
 
-const defines = [
-  require('./log'),
-  require('./ota'),
-  require('./user')
-]
+const defines = []
+
+const files = fs.readdirSync(__dirname)
+
+for (const f of files) {
+  if (f === 'index.js' || f === 'migration.js') {
+    continue
+  }
+
+  const define = require(path.join(__dirname, f))
+  defines.push(define)
+}
 
 const db = {}
 const cfg = config.database
@@ -17,6 +26,18 @@ const sequelize = new Sequelize(cfg.database, cfg.username, cfg.password,
     ...cfg,
     logging: sql => logger.info(sql)
   })
+
+function ModelVersion(sequelize, DataTypes) {
+  const db = sequelize.define('__model_version__', {
+    version: {type: DataTypes.INTEGER, primaryKey: true}
+  }, {
+    tableName: '__model_version__',
+    freezeTableName: true,
+    timestamps: true
+  })
+  
+  return db
+}
 
 function importModels(defArray) {
   for (const def of defArray) {
@@ -29,6 +50,7 @@ function importModels(defArray) {
   }
 }
 
+db['__model_version__'] = ModelVersion(sequelize, Sequelize.DataTypes)
 importModels(defines)
 
 Object.keys(db).forEach(modelName => {
@@ -40,23 +62,9 @@ Object.keys(db).forEach(modelName => {
 })
 
 db.sequelize = sequelize
-db.Sequelize = Sequelize
-
-async function initializeDb() {
-  await sequelize.sync({logging: (log) => logger.info(log), force: false, alter: false})
-  logger.info('db initialized!')
-  const userCount = await db.users.count()
-  if (userCount === 0) {
-    await db.users.createEx({
-      username: config.sysadmin.username,
-      password: config.sysadmin.password,
-      level: 0
-    })
-  }
-}
 
 if (cluster.isMaster) {
-  initializeDb()
+  require('./migration')(db)
 }
 
 module.exports = db

@@ -1,21 +1,19 @@
 'use strict'
-const Router = require('express-promise-router')
+const Router = require('koa-router')
 const fs = require('../utils/async-fs')
 const uuid = require('uuid/v1')
+const send = require('koa-send')
 const Joi = require('joi')
 const {validate} = require('../utils/validate')
-const db = require('../models')
 const {constructQuerySort} = require('../utils/dbhelper')
-const multer = require('multer')
-const {authenticateRequird, authLevel} = require('../auth')
+const koaBody = require('koa-body')
+const {authLevel} = require('../auth')
 const config = require('../config')
 
 const router = Router()
 
-const upload = multer({dest: config.tmpdir})
-
-router.get('/packages', authenticateRequird(), authLevel('reporter'), async (req, res) => {
-  const params = validate(req.query, {
+router.get('/packages', authLevel('reporter'), async ctx => {
+  const params = validate(ctx.query, {
     results: Joi.number().integer().default(20),
     page: Joi.number().integer().default(1),
     sortField: Joi.string(),
@@ -30,74 +28,92 @@ router.get('/packages', authenticateRequird(), authLevel('reporter'), async (req
 
   constructQuerySort(option, params.sortField, params.sortOrder)
 
-  const out = await db.ota_packages.findAndCountAll(option)
+  const out = await ctx.db.ota_packages.findAndCountAll(option)
   
-  res.json({
+  ctx.body = {
     totalCount: out.count,
     results: out.rows
-  })
+  }
 })
 
-router.post('/upload', 
-  authenticateRequird(), 
-  authLevel('admin'),
-  upload.single('file'), 
-  async (req, res) => {
-
-    const params = validate(req.body, {
-      version: Joi.string().required(),
-      desc: Joi.string()
-    })
-
-    const destname = uuid()
-    const dest = db.ota_packages.constructStorePath(destname)
-    await fs.forceMove(req.file.path, dest)
-
-    await db.ota_packages.create({
-      name: req.file.originalname,
-      version: params.version,
-      filename: destname,
-      description: params.desc
-    })
-    res.json({})
+router.post('/upload', authLevel('admin'), koaBody({
+  multipart: true,
+  formidable: {
+    uploadDir: config.tmpdir
   }
-)
+}), async ctx => {
 
-router.post('/delete/:id([0-9]+)', authenticateRequird(), authLevel('admin'), async (req, res) => {
-  const id = +req.params.id
-  const r = await db.ota_packages.findOne({
+  const params = validate(ctx.request.body, {
+    version: Joi.string().required(),
+    desc: Joi.string()
+  })
+
+  const destname = uuid()
+  const dest = ctx.db.ota_packages.constructStorePath(destname)
+  const file = ctx.request.files.file
+  await fs.forceMove(file.path, dest)
+
+  await ctx.db.ota_packages.create({
+    name: file.name,
+    version: params.version,
+    filename: destname,
+    description: params.desc
+  })
+  ctx.body = {}
+})
+
+router.post('/delete/:id([0-9]+)', authLevel('admin'), async ctx => {
+  const id = +ctx.params.id
+  const r = await ctx.db.ota_packages.findOne({
     where: {id}
   })
   const filepath = r.storePath()
 
-  await db.ota_packages.destroy({
+  await ctx.db.ota_packages.destroy({
     where: {id}
   })
   
   await fs.unlink(filepath)
-  res.json({path: r.fullDownloadURI(req)})
+  ctx.body = {}
 })
 
-router.get('/versions', async (req, res) => {
-  const out = await db.ota_packages.findAll()
+router.get('/version', async ctx => {
+  const r = await ctx.db.ota_packages.findOne({
+    order: [
+      ['updatedAt', 'DESC']
+    ]
+  })
+
+  if (!r) {
+    ctx.body = {}
+    return
+  }
+
+  ctx.body = {
+    name: r.name,
+    version: r.version,
+    description: r.description,
+    updatedAt: r.updatedAt,
+    firmware: r.fullDownloadURI(ctx)
+  }
+})
+
+router.get('/versions', async ctx => {
+  const out = await ctx.db.ota_packages.findAll()
   const results = out.map(r => ({
     name: r.name,
     version: r.version,
     description: r.description,
     updatedAt: r.updatedAt,
-    firmware: r.fullDownloadURI(req)
+    firmware: r.fullDownloadURI(ctx)
   }))
-  res.json(results)
+  ctx.body = results
 })
 
-router.get('/download/:firmware', (req, res) => {
-  const filepath = db.ota_packages.constructStorePath(req.params.firmware)
-  res.download(filepath, req.params.firmware, err => {
-    if (err) {
-      console.log(err)
-      res.status(err.status).end()
-    }
-  })
+router.get('/download/:firmware', async ctx => {
+  const filepath = ctx.db.ota_packages.constructStorePath(ctx.params.firmware)
+  ctx.attachment(ctx.firmware)
+  await send(ctx, filepath, {root: '/'})
 })
 
 module.exports = router

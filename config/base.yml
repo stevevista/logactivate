@@ -2,16 +2,12 @@ port: 3001
 cluster: true
 logdir: storage
 exceptionFilename: exceptions.log
-exceptionFilesize: 1M
+exceptionFilesize: 10M
 exceptionBackups: 100
-appLogFilename: logactivate.log
 appLogLevel: warn
 appLogSize: 31457280
 database:
   storage: database.sqlite
-  host: localhost
-  dialect: sqlite
-  operatorsAliases: false
 session:
   secrets: abcd.1234
 ota:

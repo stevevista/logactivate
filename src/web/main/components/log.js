@@ -1,5 +1,5 @@
 import React from 'react'
-import { Table, Icon, Modal } from 'antd'
+import { Table, Button, Popover } from 'antd'
 import axios from 'axios'
 import moment from 'moment'
 import { injectIntl } from 'react-intl'
@@ -12,8 +12,13 @@ class Log extends React.Component {
     filters: {},
     sorter: {},
     loading: false,
-    filesModalVisible: false,
-    logList: []
+    logLists: {},
+    shareLinkVisible: false,
+    shareToken: null
+  }
+
+  handleVisibleChange = (shareLinkVisible) => {
+    this.setState({ shareLinkVisible })
   }
 
   columns = [{
@@ -44,56 +49,66 @@ class Log extends React.Component {
     render: (text, record) => (
       <span>{moment(text).fromNow()}</span>
     )
-  }, {
-    title: 'File',
-    render: (text, record) => (
-      <div>
-        <Icon type="share-alt" onClick={() => this.showModal(record.imei)}/>
-      </div>
-    )
   }]
 
-  showModal = (imei) => {
-    axios.get('/log/files/' + imei)
-      .then(res => {
-        const {data} = res
-        console.log(data)
-        this.setState({
-          filesModalVisible: true,
-          logList: data
+  onExpand = (expanded, record) => {
+    if (expanded) {
+      const imei = record.imei
+      axios.get('/log/files/' + imei)
+        .then(res => {
+          const {data} = res
+          const logLists = {...this.state.logLists}
+          logLists[imei] = data
+          this.setState({logLists})
         })
-      })
+    }
   }
 
-  handleOk = (e) => {
-    this.setState({
-      filesModalVisible: false
-    })
-  }
+  expandedRowRender = (record, index, indent, expanded) => {
+    if (expanded) {
+      const imei = record.imei
+      let info = {}
+      try {
+        info = JSON.parse(record.data)
+      } catch (e) {
+        // pass
+      }
 
-  handleCancel = (e) => {
-    this.setState({
-      filesModalVisible: false
-    })
+      return (
+        <div>
+          {
+            Object.keys(info).map(k => (
+              <span key={k}>{k} ： {info[k]}</span>
+            ))
+          }
+          {
+            this.state.logLists[imei] && this.state.logLists[imei].map(p => (
+              <p key={p.id}>
+                <a href={p.url}>{p.filename}</a>
+                <Popover
+                  content={<p>{p.url + '?access_token=' + this.state.shareToken}</p>}
+                  title="1小时有效"
+                  trigger="click"
+                  visible={this.state.shareLinkVisible}
+                  onVisibleChange={this.handleVisibleChange}
+                >
+                  <Button shape="circle" size="small" icon="share-alt" style={{marginLeft: 20}} onClick={this.shareLogLink}/>
+                </Popover>
+              </p>))
+          }
+        </div>
+      )
+    }
+    return null
   }
-
 
   render () {
     return (
       <div>
-        <Modal
-          title="Uploaded Logs"
-          visible={this.state.filesModalVisible}
-          onOk={this.handleOk}
-          onCancel={this.handleCancel}
-          maskClosable={true}
-        >
-          {
-            this.state.logList.map(p => (<p key={p.id}><a href={p.url}>{p.filename}</a></p>))
-          }
-        </Modal>
         <Table
           columns={this.columns}
+          expandedRowRender={this.expandedRowRender}
+          onExpand={this.onExpand}
           rowKey={record => record.id}
           dataSource={this.state.data}
           pagination={this.state.pagination}
@@ -115,7 +130,7 @@ class Log extends React.Component {
     this.setState({ loading: true })
   
     axios.get('/log/exceptions', {
-      params: {results: 10, ...params}
+      params: {results: 20, ...params}
     })
       .then(res => {
         const {data} = res
@@ -130,7 +145,6 @@ class Log extends React.Component {
           text: r, value: r
         }))
         
-        console.log(data)
         const pagination = { ...this.state.pagination }
 
         pagination.total = data.totalCount
@@ -149,7 +163,7 @@ class Log extends React.Component {
 
   refresh = () => {
     this.fetch({
-      results: this.state.pagination.pageSize || 10,
+      results: this.state.pagination.pageSize || 20,
       page: this.state.pagination.current,
       sortField: this.state.sorter.field,
       sortOrder: this.state.sorter.order,
@@ -172,6 +186,16 @@ class Log extends React.Component {
       sortOrder: sorter.order,
       ...filters
     })
+  }
+
+  shareLogLink = () => {
+    axios.post('/user/share-token', {
+      level: 2,
+      max_age: 60 * 60
+    })
+      .then(({data}) => {
+        this.setState({shareToken: data})
+      })
   }
 }
 

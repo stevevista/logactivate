@@ -1,5 +1,5 @@
 import React from 'react'
-import {Row, Col, Radio, Button, Divider, Modal, Form, Input, Icon, message} from 'antd'
+import {Row, Col, Radio, Button, Divider, Modal, Form, Input, Icon, message, Tag} from 'antd'
 import { injectIntl } from 'react-intl'
 import pkg from '@/../../package.json'
 import { connect } from 'react-redux'
@@ -176,6 +176,14 @@ class NormalLoginForm extends React.Component {
 
 const WrappedNormalLoginForm = Form.create()(NormalLoginForm)
 
+const levelString = [
+  'Super',
+  'Admin',
+  'Reporter',
+  'Customer',
+  'Visitor'
+]
+
 class Settings extends React.Component {
   state = {
     port: 0,
@@ -211,7 +219,7 @@ class Settings extends React.Component {
 
   render () {
     const titleStyle = {float: 'right', marginRight: 10}
-    const rowStyle = {marginBottom: 15}
+    const rowStyle = {marginBottom: 20}
 
     return (
       <div style={{margin: 10}}>
@@ -289,13 +297,7 @@ class Settings extends React.Component {
             <span style={titleStyle}>{this.props.intl.formatMessage({id: 'settings.user-level'})}</span>
           </Col>
           <Col span={15}>
-            <Radio.Group value={this.props.authed.level} buttonStyle="solid" size="small">
-              <Radio.Button value={0}>Super</Radio.Button>
-              <Radio.Button value={1}>Admin</Radio.Button>
-              <Radio.Button value={2}>Reporter</Radio.Button>
-              <Radio.Button value={3}>Customer</Radio.Button>
-              <Radio.Button value={4}>Vistor</Radio.Button>
-            </Radio.Group>
+            <Tag>{levelString[this.props.authed.level]}</Tag>
           </Col>
         </Row>
 
@@ -306,17 +308,14 @@ class Settings extends React.Component {
             <div key={u.id}>
               <Row style={rowStyle}>
                 <Col span={8}>
-                  <span style={titleStyle}><Button shape="circle" icon="user" size="small" onClick={() => { this.updateUser(u) }}/> <b>{u.username}</b></span>
+                  <span style={titleStyle}>
+                    <b style={{marginRight: 10}}>{u.username}</b>
+                    <Button shape="circle" icon="user" size="small" onClick={() => { this.updateUser(u) }}/>
+                  </span>
                 </Col>
                 <Col span={15}>
-                  <Radio.Group value={u.level} buttonStyle="solid" size="small">
-                    <Radio.Button value={0} >Super</Radio.Button>
-                    <Radio.Button value={1}>Admin</Radio.Button>
-                    <Radio.Button value={2}>Reporter</Radio.Button>
-                    <Radio.Button value={3}>Customer</Radio.Button>
-                    <Radio.Button value={4}>Vistor</Radio.Button>
-                  </Radio.Group>
-                  <Button shape="circle" icon="delete" type="danger" size="small" onClick={() => this.deleteUser(u.username)}/>
+                  <Tag>{levelString[u.level]}</Tag>
+                  <Button className="setting-button" shape="circle" icon="delete" type="danger" size="small" onClick={() => this.deleteUser(u.username)}/>
                 </Col>
               </Row>
             </div>
@@ -392,7 +391,7 @@ class Settings extends React.Component {
             })
 
             if (e.response && e.response.data) {
-              message.error(e.response.data.message)
+              message.error(e.response.data)
             } else {
               message.error('fail')
             }
@@ -423,7 +422,7 @@ class Settings extends React.Component {
             })
 
             if (e.response && e.response.data) {
-              message.error(e.response.data.message)
+              message.error(e.response.data)
             } else {
               message.error('fail')
             }

@@ -27,9 +27,19 @@ let config = {
   configDir,
   logdir: 'storage',
   tmpdir: 'tmp',
+  ssldir: 'ssl',
+  ssl: true,
   session: {
     maxAge: 24 * 60 * 60 * 1000
-  }
+  },
+  database: {
+    host: 'localhost',
+    dialect: 'sqlite',
+    operatorsAliases: false
+  },
+  appLogFilename: 'logactivate.log',
+  exceptionFilename: 'exceptions.log',
+  exceptionFilesize: '10M'
 }
 
 if (!fs.existsSync(basConfigPath)) {
@@ -62,15 +72,7 @@ resolvePath(config.database, 'storage', workDir)
 resolvePath(config.ota, 'firmwareDir', workDir)
 resolvePath(config, 'appLogFilename', workDir)
 resolvePath(config, 'tmpdir', workDir)
-
-// default log option
-if (!config.exceptionFilename) {
-  config.exceptionFilename = 'exceptions.log'
-}
-
-if (!config.exceptionFilename) {
-  config.exceptionFilesize = '1M'
-}
+resolvePath(config, 'ssldir', workDir)
 
 // app log configuration
 const logConfig = {
@@ -94,6 +96,25 @@ const logConfig = {
 
 // init logger
 log4js.configure(logConfig)
+
+// ssl config
+if (config.ssl) {
+  if (fs.existsSync(config.ssldir)) {
+    let key
+    let cert
+    for (const f of fs.readdirSync(config.ssldir)) {
+      const ext = path.extname(f)
+      if (ext === '.crt' || ext === '.pem') {
+        cert = fs.readFileSync(path.join(config.ssldir, f))
+      } else if (ext === '.key') {
+        key = fs.readFileSync(path.join(config.ssldir, f))
+      }
+    }
+    if (key && cert) {
+      config.sslOption = {key, cert}
+    }
+  }
+}
 
 // init storage
 if (cluster.isMaster) {

@@ -9,6 +9,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 const MinifyPlugin = require("babel-minify-webpack-plugin")
 const CopyWebpackPlugin = require('copy-webpack-plugin')
+const CompressionPlugin = require("compression-webpack-plugin")
 
 const { dependencies } = require('./package.json')
 
@@ -187,7 +188,8 @@ if (process.env.NODE_ENV === 'production') {
         to: path.join(__dirname, 'dist/public'),
         ignore: ['.*']
       }
-    ])
+    ]),
+    new CompressionPlugin()
   )
 
   rendererConfig.plugins.push(new MinifyPlugin())

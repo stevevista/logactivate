@@ -1,6 +1,6 @@
 'use strict'
-const db = require('../models')
-const Op = db.Sequelize.Op
+const Sequelize = require('sequelize')
+const Op = Sequelize.Op
 
 function constructQuerySort(option, sortField, sortOrder) {
   if (sortField) {

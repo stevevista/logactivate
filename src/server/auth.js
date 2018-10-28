@@ -1,42 +1,39 @@
 'use strict'
 const jwt = require('jsonwebtoken')
+const compose = require('koa-compose')
 const config = require('./config')
-const errors = require('./utils/errors')
 
-function authToken () {
-  return function (req, res, next) {
-    const token = (req.query && req.query.access_token) || 
-      (req.body && req.body.access_token) || 
-      req.headers['x-access-token'] ||
-      (req.cookies && req.cookies.access_token)
+function authenticateRequird (required = true) {
+  return async function (ctx, next) {
+    const token = (ctx.query && ctx.query.access_token) || 
+      (ctx.request.body && ctx.request.body.access_token) || 
+      ctx.headers['x-access-token'] ||
+      (ctx.cookies.get('access_token'))
 
     if (!token) {
-      return next()
+      if (required) {
+        ctx.throw(401, 'No authorization token was found')
+      }
+      await next()
+      return
     }
-    jwt.verify(token, config.session.secrets, (err, decoded) => {
-      if (err) throw err
-      req.decoded_token = decoded
-      next()
+    ctx.state.decoded_token = await new Promise((resolve, reject) => {
+      jwt.verify(token, config.session.secrets, (err, decoded) => {
+        if (err) reject(err)
+        else resolve(decoded)
+      })
     })
+    await next()
   }
 }
 
-function signToken (obj, res) {
-  const signedTok = jwt.sign(obj, config.session.secrets, {expiresIn: config.session.maxAge})
-  if (res) {
-    res.cookie('access_token', signedTok, { maxAge: config.session.maxAge })
+function signToken (obj, ctx, opt = {}) {
+  const expiresIn = opt.maxAge || (config.session.maxAge / 1000)
+  const signedTok = jwt.sign(obj, config.session.secrets, {expiresIn})
+  if (ctx) {
+    ctx.cookies.set('access_token', signedTok, { maxAge: config.session.maxAge })
   }
-}
-
-function authenticateRequird () {
-  return function (req, res, next) {
-    if (!req.decoded_token) {
-      const err = Error('No authorization token was found')
-      err.status = 401
-      throw err
-    }
-    next()
-  }
+  return signedTok
 }
 
 const levels = {
@@ -44,36 +41,42 @@ const levels = {
   'admin': 1,
   'reporter': 2,
   'customer': 3,
-  'vistor': 4
+  'visitor': 4
 }
 
 function mapLevel(s) {
-  if (!(s in levels)) return 100
+  if (!(s in levels)) throw new Error(`unknown level ${s}`)
   return levels[s]
 }
 
-function authLevel(level) {
+function _authLevel(level) {
   if (typeof level === 'string') {
     level = mapLevel(level)
   }
-  return function (req, res, next) {
-    if (typeof req.decoded_token.level !== 'number' || req.decoded_token.level > level) {
-      throw errors.AuthError(`auth level need above ${level}`)
+  return async function (ctx, next) {
+    if (typeof ctx.state.decoded_token.level !== 'number' || ctx.state.decoded_token.level > level) {
+      ctx.throw(401, `auth level need above ${level}`)
     }
-    next()
+    await next()
   }
 }
 
-function isSuper(obj) {
-  return obj.level === 0
+function authLevel(level) {
+  return compose([
+    authenticateRequird(),
+    _authLevel(level)
+  ])
 }
 
-function higherLevelThan(obj, level) {
-  return typeof obj.level === 'number' && obj.level < level
+function isSuper(ctx) {
+  return ctx.state.decoded_token && ctx.state.decoded_token.level === 0
+}
+
+function higherLevelThan(ctx, level) {
+  return typeof ctx.state.decoded_token.level === 'number' && ctx.state.decoded_token.level < level
 }
 
 module.exports = {
-  authToken,
   authenticateRequird,
   signToken,
   authLevel,

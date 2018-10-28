@@ -1,125 +1,117 @@
 'use strict'
-const Router = require('express-promise-router')
-const {authenticateRequird, authLevel, signToken, isSuper, higherLevelThan} = require('../auth')
+const Router = require('koa-router')
+const Sequelize = require('sequelize')
 const {validate} = require('../utils/validate')
 const Joi = require('joi')
-const db = require('../models')
-const errors = require('../utils/errors')
-const Op = db.Sequelize.Op
+const {authenticateRequird, authLevel, signToken, isSuper, higherLevelThan} = require('../auth')
 
-const router = Router()
+const Op = Sequelize.Op
 
-router.get('/auth', authenticateRequird(), (req, res) => {
-  res.json(req.decoded_token)
+const router = new Router()
+
+router.get('/auth', authenticateRequird(), async ctx => {
+  ctx.body = ctx.state.decoded_token
 })
 
-router.post('/auth', async (req, res) => {
-  const params = validate(req.body, {
+router.post('/auth', async ctx => {
+  const params = validate(ctx.request.body, {
     username: Joi.string().required(),
     password: Joi.string().required()
   })
 
-  const dbuser = await db.users.findOne({
+  const dbuser = await ctx.db.users.findOne({
     where: {
       username: params.username
     }
   })
 
-  let authed = false
-  if (dbuser && !dbuser.disabled) {
-    const ret = await dbuser.checkPassword(params.password)
-    if (ret) {
-      authed = true
-    }
-  }
-
-  if (!authed) {
-    throw Error('wrong user or password')
-  }
+  const authed = dbuser && await dbuser.checkPassword(params.password)
+  ctx.assert(authed, 401, 'wrong user or password')
 
   const tok = {
     id: dbuser.id,
     username: dbuser.username,
     level: dbuser.level
   }
-  signToken(tok, res)
+  signToken(tok, ctx)
 
-  res.json(tok)
+  ctx.body = tok
 })
 
-router.post('/logout', (req, res) => {
-  res.clearCookie('access_token')
-  res.json({})
+router.post('/logout', ctx => {
+  ctx.cookies.set('access_token', undefined)
+  ctx.body = {}
 })
 
-router.post('/password', authenticateRequird(), async (req, res) => {
-  const params = validate(req.body, {
+router.post('/password', authenticateRequird(), async ctx => {
+  const params = validate(ctx.request.body, {
     password: Joi.string().required(),
     old_password: Joi.string().required()
   })
 
-  const dbuser = await db.users.findOne({
+  const dbuser = await ctx.db.users.findOne({
     where: {
-      username: req.decoded_token.username
+      username: ctx.state.decoded_token.username
     }
   })
-  errors.assert(dbuser, `${req.decoded_token.username} not exists!`)
+  ctx.assert(dbuser, 400, `${ctx.state.decoded_token.username} not exists!`)
 
   const ret = await dbuser.checkPassword(params.old_password)
-  errors.assert(ret, 'wrong password', 401)
+  ctx.assert(ret, 401, 'wrong password')
 
-  await db.users.updateEx({
+  await ctx.db.users.updateEx({
     password: params.password
   }, {
     where: {
-      username: req.decoded_token.username
+      username: ctx.state.decoded_token.username
     }
   })
-  res.json({})
+  ctx.body = {}
 })
 
-router.post('/:username/add', authenticateRequird(), authLevel('admin'), async (req, res) => {
-  const params = validate(req.body, {
+router.post('/:username/add', authLevel('admin'), async ctx => {
+  const params = validate(ctx.request.body, {
     password: Joi.string().required(),
     level: Joi.number().integer().required()
   })
 
-  errors.assert(higherLevelThan(req.decoded_token, params.level), 'bad auth level', 401)
+  ctx.assert(ctx.state.decoded_token.username, 401, 'bad user')
+  ctx.assert(higherLevelThan(ctx, params.level), 401, 'bad auth level')
 
   try {
-    await db.users.createEx({
-      username: req.params.username,
+    await ctx.db.users.createEx({
+      username: ctx.params.username,
       password: params.password,
       level: params.level,
-      creator: req.decoded_token.username
+      creator: ctx.state.decoded_token.username
     })
   } catch (e) {
-    if (e instanceof db.Sequelize.UniqueConstraintError) {
-      throw new Error('username already exists')
+    if (e instanceof Sequelize.UniqueConstraintError) {
+      ctx.throw('username already exists')
     }
     throw e
   }
 
-  res.json({})
+  ctx.body = {}
 })
 
-function queryAdminableUser(req, option, username) {
+function queryAdminableUser(ctx, option, username) {
   option.where = {
     username
   }
 
-  if (!isSuper(req.decoded_token)) {
-    option.where.creator = req.decoded_token.username
+  if (!isSuper(ctx)) {
+    option.where.creator = ctx.state.decoded_token.username
   }
 }
 
-router.post('/:username/update', authenticateRequird(), authLevel('admin'), async (req, res) => {
-  const params = validate(req.body, {
+router.post('/:username/update', authLevel('admin'), async ctx => {
+  const params = validate(ctx.request.body, {
     password: Joi.string(),
     level: Joi.number().integer().required()
   })
 
-  errors.assert(higherLevelThan(req.decoded_token, params.level), 'bad auth level', 401)
+  ctx.assert(higherLevelThan(ctx, params.level), 401, 'bad auth level')
 
   const fields = {
     level: params.level
@@ -130,39 +122,56 @@ router.post('/:username/update', authenticateRequird(), authLevel('admin'), asyn
 
   const option = {}
 
-  queryAdminableUser(req, option, req.params.username)
-  await db.users.updateEx(fields, option)
+  queryAdminableUser(ctx, option, ctx.params.username)
+  await ctx.db.users.updateEx(fields, option)
 
-  res.json({})
+  ctx.body = {}
 })
 
-router.post('/:username/del', authenticateRequird(), authLevel('admin'), async (req, res) => {
+router.post('/:username/del', authLevel('admin'), async ctx => {
 
   const option = {}
 
-  queryAdminableUser(req, option, req.params.username)
-  await db.users.destroy(option)
+  queryAdminableUser(ctx, option, ctx.params.username)
+  await ctx.db.users.destroy(option)
 
-  res.json({})
+  ctx.body = {}
 })
 
-router.get('/list', authenticateRequird(), async (req, res) => {
+router.get('/list', authLevel('admin'), async ctx => {
   const option = {}
 
-  if (!isSuper(req.decoded_token)) {
+  if (!isSuper(ctx)) {
     option.where = {
-      creator: req.decoded_token.username,
-      level: {[Op.gt]: req.decoded_token.level}
+      creator: ctx.state.decoded_token.username,
+      level: {[Op.gt]: ctx.state.decoded_token.level}
     }
   } else {
     option.where = {
-      username: {[Op.ne]: req.decoded_token.username}
+      username: {[Op.ne]: ctx.state.decoded_token.username}
     }
   }
 
-  const users = await db.users.findAll(option)
+  const users = await ctx.db.users.findAll(option)
   users.forEach(u => { u.password = undefined })
-  res.json(users)
+  ctx.body = users
+})
+
+router.post('/share-token', authenticateRequird(), async ctx => {
+  const params = validate(ctx.request.body, {
+    level: Joi.number().integer().required(),
+    max_age: Joi.number().integer().max(60 * 60 * 24 * 7).default(60 * 60)
+  })
+
+  ctx.assert(higherLevelThan(ctx, params.level), 401, 'bad auth level')
+
+  const tok = {
+    level: params.level,
+    owner: ctx.state.decoded_token.username
+  }
+  const signed = signToken(tok, null, {maxAge: params.max_age})
+
+  ctx.body = signed
 })
 
 module.exports = router

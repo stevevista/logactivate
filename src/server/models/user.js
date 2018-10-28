@@ -14,8 +14,12 @@ function users(sequelize, DataTypes) {
     timestamps: true
   })
 
-  db.prototype.checkPassword = function(plain) {
-    return bcrypt.compare(plain, this.password)
+  db.prototype.checkPassword = async function(plain) {
+    if (this.disabled) {
+      return false
+    }
+    const ret = await bcrypt.compare(plain, this.password)
+    return ret
   }
 
   db.hashPassword = function(password) {

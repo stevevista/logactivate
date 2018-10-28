@@ -3,28 +3,6 @@
   "version": "1.2.0",
   "description": "desktop bulid demo",
   "main": "dist/lib/index.js",
-  "scripts": {
-    "dev": "node scripts/devServer.js",
-    "dev:server": "node scripts/devServer.js --no-web",
-    "build:server": "gulp",
-    "build:web": "node scripts/build.js",
-    "build": "npm run build:server && npm run build:web",
-    "setup": "npm i && npm run build",
-    "lint": "eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter src test",
-    "lint:fix": "eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter --fix src test",
-    "test": "jest",
-    "pack": "npm run build && pkg . --out-path ./release"
-  },
-  "bin": "dist/lib/index.js",
-  "pkg": {
-    "assets": [
-      "dist/public/**/*"
-    ],
-    "targets": [
-      "node8-linux-x64",
-      "node8-win-x86"
-    ]
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/stevevista/logactivate.git"
@@ -43,6 +21,25 @@
       "**/tests/**/*.+(js)"
     ]
   },
+  "dependencies": {
+    "bcrypt": "^3.0.2",
+    "joi": "^14.0.1",
+    "js-yaml": "^3.12.0",
+    "jsonwebtoken": "^8.3.0",
+    "koa": "^2.6.1",
+    "koa-body": "^4.0.4",
+    "koa-router": "^7.4.0",
+    "koa-send": "^5.0.0",
+    "log4js": "^3.0.6",
+    "sequelize": "^4.41.0",
+    "sqlite3": "^4.0.3",
+    "lodash": "^4.17.11",
+    "mysql2": "^1.6.1",
+    "pg": "^7.5.0",
+    "pg-hstore": "^2.3.2",
+    "streamroller": "^0.8.5",
+    "tedious": "^2.6.4"
+  },
   "devDependencies": {
     "@babel/core": "^7.1.2",
     "@babel/plugin-proposal-class-properties": "^7.1.0",
@@ -57,6 +54,7 @@
     "babel-minify-webpack-plugin": "^0.3.1",
     "babel-plugin-import": "^1.10.0",
     "clean-webpack-plugin": "^0.1.19",
+    "compression-webpack-plugin": "^2.0.0",
     "copy-webpack-plugin": "^4.5.2",
     "css-loader": "^1.0.0",
     "eslint": "^5.7.0",
@@ -82,35 +80,39 @@
     "node-loader": "^0.6.0",
     "optimize-css-assets-webpack-plugin": "^5.0.1",
     "pkg": "^4.3.4",
-    "prop-types": "^15.6.2",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
     "react-intl": "^2.7.1",
     "react-redux": "^5.0.7",
     "redux": "^4.0.1",
     "url-loader": "^1.1.1",
-    "webpack": "^4.20.2",
+    "webpack": "^4.23.1",
     "webpack-dev-server": "^3.1.9",
     "webpack-hot-middleware": "^2.24.3",
     "yml-loader": "^2.1.0"
   },
-  "dependencies": {
-    "bcrypt": "^3.0.2",
-    "compression": "^1.7.3",
-    "cookie-parser": "^1.4.3",
-    "express-promise-router": "^3.0.3",
-    "joi": "^14.0.0",
-    "js-yaml": "^3.12.0",
-    "jsonwebtoken": "^8.3.0",
-    "lodash": "^4.17.11",
-    "log4js": "^3.0.6",
-    "multer": "^1.4.1",
-    "mysql2": "^1.6.1",
-    "pg": "^7.5.0",
-    "pg-hstore": "^2.3.2",
-    "sequelize": "^4.39.1",
-    "sqlite3": "^4.0.2",
-    "streamroller": "^0.8.5",
-    "tedious": "^2.6.4"
+  "scripts": {
+    "dev": "node scripts/devServer.js",
+    "dev:server": "node scripts/devServer.js --no-web",
+    "build:server": "gulp",
+    "build:web": "node scripts/build.js",
+    "build": "npm run build:server && npm run build:web",
+    "lint": "eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter src test",
+    "lint:fix": "eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter --fix src test",
+    "test": "jest",
+    "pack": "npm run build && pkg . --out-path ./release"
+  },
+  "bin": "dist/lib/index.js",
+  "pkg": {
+    "scripts": [
+      "dist/lib/**/*"
+    ],
+    "assets": [
+      "dist/public/**/*"
+    ],
+    "targets": [
+      "node8-linux-x64",
+      "node8-win-x86"
+    ]
   }
 }

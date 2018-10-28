@@ -31,7 +31,7 @@ class HorizontalLoginForm extends React.Component {
           .catch(e => {
             console.log(e.response)
             if (e.response && e.response.data) {
-              message.error(e.response.data.message)
+              message.error(e.response.data)
             } else {
               message.error('login fail')
             }

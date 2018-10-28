@@ -1,16 +1,15 @@
 'use strict'
 const http = require('http')
+const https = require('https')
 const path = require('path')
-const express = require('express')
-const compression = require('compression')
 const cluster = require('cluster')
-const bodyParser = require('body-parser')
-const cookieParser = require('cookie-parser')
+const Koa = require('koa')
+const koaBody = require('koa-body')
+const router = require('./routes')
+const db = require('./models')
+const serveStatic = require('./static')
 const logact = require('./logact')
 const config = require('./config')
-require('./models')
-
-const {authToken} = require('./auth')
 
 const logger = require('log4js').getLogger()
 
@@ -20,39 +19,40 @@ logact.configure({
   backups: config.exceptionBackups
 })
 
-const app = express()
+const app = new Koa()
 
-app.use(cookieParser())
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: true }))
+// app.proxy = true
+app.context.db = db
 
-app.use('/', compression(), express.static(path.join(__dirname, '../public'), {
-  maxAge: '1d'
-}))
-
-app.get('/', (req, res) => {
-  res.redirect('/main.html')
+app.on('error', err => {
+  console.error('server error', err)
 })
 
-app.use(authToken())
-app.use(require('./routes'))
-
-// handle errors
-app.use((err, req, res, next) => {
-  res.status(err.status || 500).json({message: err.message})
-  if (err.status !== 401) {
-    logger.fatal(req.path, err.message)
+app.use(async (ctx, next) => {
+  try {
+    await next()
+  } catch (e) {
+    ctx.status = e.status || 500
+    ctx.body = e.message
+    if (ctx.status === 500) {
+      logger.error(ctx.path, e.message)
+    } else {
+      if (ctx.status !== 401) {
+        logger.warn(ctx.path, e.message)
+      }
+    }
   }
 })
 
-// handle 404
-if (process.env.NODE_ENV === 'production') {
-  app.use((req, res) => {
-    res.status(404).json({message: 'not found'})
-  })
-}
+app.use(koaBody())
 
-const server = http.createServer(app)
+app
+  .use(router.routes())
+  .use(router.allowedMethods())
+
+app.use(serveStatic('/', path.join(__dirname, '../public'), {gzip: true}))
+
+const server = http.createServer(app.callback())
 
 if (config.cluster) {
   const numCPUs = require('os').cpus().length
@@ -60,6 +60,9 @@ if (config.cluster) {
   if (cluster.isMaster) {
     logger.info(`http server on ${config.port}, on ${numCPUs} cores`)
     console.log(`http server on ${config.port}, on ${numCPUs} cores`)
+    if (config.sslOption) {
+      console.log('https enabled')
+    }
   
     for (let i = 0; i < numCPUs; i++) {
       cluster.fork()
@@ -76,11 +79,20 @@ if (config.cluster) {
     })
   } else {
     server.listen(config.port)
+    if (config.sslOption) {
+      https.createServer(config.sslOption, app.callback()).listen(443)
+    }
   }  
 } else {
   logger.info(`http server on ${config.port}, on single core mode`)
   console.log(`http server on ${config.port}, on single core mode`)
+  if (config.sslOption) {
+    console.log('https enabled')
+  }
   server.listen(config.port)
+  if (config.sslOption) {
+    https.createServer(config.sslOption, app.callback()).listen(443)
+  }
 }
 
 module.exports = app
