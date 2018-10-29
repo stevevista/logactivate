@@ -59,7 +59,7 @@ router.post('/upload', authLevel('admin'), koaBody({
     filename: destname,
     description: params.desc
   })
-  ctx.body = {}
+  ctx.body = ''
 })
 
 router.post('/delete/:id([0-9]+)', authLevel('admin'), async ctx => {
@@ -74,7 +74,7 @@ router.post('/delete/:id([0-9]+)', authLevel('admin'), async ctx => {
   })
   
   await fs.unlink(filepath)
-  ctx.body = {}
+  ctx.body = ''
 })
 
 router.get('/version', async ctx => {

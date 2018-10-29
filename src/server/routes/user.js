@@ -40,7 +40,7 @@ router.post('/auth', async ctx => {
 
 router.post('/logout', ctx => {
   ctx.cookies.set('access_token', undefined)
-  ctx.body = {}
+  ctx.body = ''
 })
 
 router.post('/password', authenticateRequird(), async ctx => {
@@ -66,7 +66,7 @@ router.post('/password', authenticateRequird(), async ctx => {
       username: ctx.state.decoded_token.username
     }
   })
-  ctx.body = {}
+  ctx.body = ''
 })
 
 router.post('/:username/add', authLevel('admin'), async ctx => {
@@ -92,7 +92,7 @@ router.post('/:username/add', authLevel('admin'), async ctx => {
     throw e
   }
 
-  ctx.body = {}
+  ctx.body = ''
 })
 
 function queryAdminableUser(ctx, option, username) {
@@ -125,7 +125,7 @@ router.post('/:username/update', authLevel('admin'), async ctx => {
   queryAdminableUser(ctx, option, ctx.params.username)
   await ctx.db.users.updateEx(fields, option)
 
-  ctx.body = {}
+  ctx.body = ''
 })
 
 router.post('/:username/del', authLevel('admin'), async ctx => {
@@ -135,7 +135,7 @@ router.post('/:username/del', authLevel('admin'), async ctx => {
   queryAdminableUser(ctx, option, ctx.params.username)
   await ctx.db.users.destroy(option)
 
-  ctx.body = {}
+  ctx.body = ''
 })
 
 router.get('/list', authLevel('admin'), async ctx => {
