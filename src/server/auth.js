@@ -17,14 +17,18 @@ function authenticateRequird (required = true) {
       await next()
       return
     }
-    ctx.state.decoded_token = await new Promise((resolve, reject) => {
-      jwt.verify(token, config.session.secrets, (err, decoded) => {
-        if (err) reject(err)
-        else resolve(decoded)
-      })
-    })
+    ctx.state.decoded_token = await decodeToken(token)
     await next()
   }
+}
+
+function decodeToken(token) {
+  return new Promise((resolve, reject) => {
+    jwt.verify(token, config.session.secrets, (err, decoded) => {
+      if (err) reject(err)
+      else resolve(decoded)
+    })
+  })
 }
 
 function signToken (obj, ctx, opt = {}) {
@@ -79,6 +83,7 @@ function higherLevelThan(ctx, level) {
 module.exports = {
   authenticateRequird,
   signToken,
+  decodeToken,
   authLevel,
   isSuper,
   mapLevel,
