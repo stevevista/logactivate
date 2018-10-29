@@ -25,11 +25,14 @@ const hotMiddleware = (compiler, opts) => {
       let stream = new PassThrough()
       ctx.body = stream
       await middleware(ctx.req, {
-          write: stream.write.bind(stream),
-          writeHead: (status, headers) => {
-              ctx.status = status
-              ctx.set(headers)
-          }
+        end: (content) => {
+            ctx.body = content
+        },
+        write: stream.write.bind(stream),
+        writeHead: (status, headers) => {
+            ctx.status = status
+            ctx.set(headers)
+        }
       }, next)
   } 
 }

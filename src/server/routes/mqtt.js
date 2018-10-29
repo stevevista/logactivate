@@ -1,5 +1,7 @@
 'use strict'
 const Router = require('koa-router')
+const MQTT = require('async-mqtt')
+const {authenticateRequird} = require('../auth')
 const {decodeToken} = require('../auth')
 
 const router = Router()
@@ -53,6 +55,27 @@ router.post('/superuser', async ctx => {
 router.post('/acl', async ctx => {
   const {username, clientid, topic, acc} = ctx.request.body
   console.log(username, clientid, topic, acc)
+  ctx.body = {}
+})
+
+router.post('/pub', authenticateRequird(), async ctx => {
+  const {topic, message} = ctx.request.body
+  const client = MQTT.connect('mqtt://localhost', {
+    username: ctx.state._token,
+    password: '1'
+  })
+
+  await new Promise((resolve, reject) => {
+    client.on('connect', async () => {
+      try {
+        await client.publish(topic, message)
+        await client.end()
+        resolve()
+      } catch (e) {
+        reject(e)
+      }
+    })
+  })
   ctx.body = {}
 })
 

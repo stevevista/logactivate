@@ -22,6 +22,7 @@
     ]
   },
   "dependencies": {
+    "async-mqtt": "^2.0.0",
     "bcrypt": "^3.0.2",
     "joi": "^14.0.1",
     "js-yaml": "^3.12.0",
@@ -30,13 +31,13 @@
     "koa-body": "^4.0.4",
     "koa-router": "^7.4.0",
     "koa-send": "^5.0.0",
-    "log4js": "^3.0.6",
-    "sequelize": "^4.41.0",
-    "sqlite3": "^4.0.3",
     "lodash": "^4.17.11",
+    "log4js": "^3.0.6",
     "mysql2": "^1.6.1",
     "pg": "^7.5.0",
     "pg-hstore": "^2.3.2",
+    "sequelize": "^4.41.0",
+    "sqlite3": "^4.0.3",
     "streamroller": "^0.8.5",
     "tedious": "^2.6.4"
   },

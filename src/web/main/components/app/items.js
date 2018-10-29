@@ -21,5 +21,12 @@ export default [
     messageId: 'sidebar.setting',
     path: 'test',
     component: require('../settings').default
+  },
+  {
+    icon: Icon,
+    iconType: 'wechat',
+    label: 'MQTT',
+    path: 'mqtt',
+    component: require('../mqtt').default
   }
 ]

@@ -17,6 +17,7 @@ function authenticateRequird (required = true) {
       await next()
       return
     }
+    ctx.state._token = token
     ctx.state.decoded_token = await decodeToken(token)
     await next()
   }
