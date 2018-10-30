@@ -39,7 +39,8 @@
     "sequelize": "^4.41.0",
     "sqlite3": "^4.0.3",
     "streamroller": "^0.8.5",
-    "tedious": "^2.6.4"
+    "tedious": "^2.6.4",
+    "ws": "^6.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.1.2",
@@ -56,6 +57,7 @@
     "babel-plugin-import": "^1.10.0",
     "clean-webpack-plugin": "^0.1.19",
     "compression-webpack-plugin": "^2.0.0",
+    "copy-to-clipboard": "^3.0.8",
     "copy-webpack-plugin": "^4.5.2",
     "css-loader": "^1.0.0",
     "eslint": "^5.7.0",

@@ -1,5 +1,7 @@
 port: 3001
 cluster: true
+websocket: true
+mqttServer: mqtt://deepzone.top
 logdir: storage
 exceptionFilename: exceptions.log
 exceptionFilesize: 10M

@@ -1,6 +1,7 @@
 'use strict'
 const Router = require('koa-router')
 const MQTT = require('async-mqtt')
+const config = require('../config')
 const {decodeToken, authenticateRequird} = require('../auth')
 
 const router = Router()
@@ -9,7 +10,7 @@ async function decodeMqttUserToken(ctx, username) {
   // token, dont care password
   const u = await decodeToken(username)
     .catch(e => ctx.throw(403))
-  ctx.assert(u.id, 403)
+  ctx.assert(u.username, 403)
 
   return u
 }
@@ -38,7 +39,7 @@ router.post('/superuser', async ctx => {
 
   if (username.length > 100) {
     const u = await decodeMqttUserToken(ctx, username)
-    ctx.assert(u.id && u.super, 403)
+    ctx.assert(u.super || u.level === 0, 403)
   } else {
     const dbuser = await ctx.db.users.findOne({
       where: {
@@ -57,7 +58,7 @@ router.post('/acl', async ctx => {
   let id = username
   if (username.length > 100) {
     const u = await decodeMqttUserToken(ctx, username)
-    id = u.id
+    id = u.username
   }
 
   console.log(id, clientid, topic, acc)
@@ -66,7 +67,7 @@ router.post('/acl', async ctx => {
 
 router.post('/pub', authenticateRequird(), async ctx => {
   const {topic, message} = ctx.request.body
-  const client = MQTT.connect('mqtt://localhost', {
+  const client = MQTT.connect(config.mqttServer, {
     username: ctx.state._token,
     password: '1'
   })
@@ -81,7 +82,13 @@ router.post('/pub', authenticateRequird(), async ctx => {
         reject(e)
       }
     })
+
+    client.on('error', e => {
+      client.end()
+      reject(e)
+    })
   })
+
   ctx.body = ''
 })
 

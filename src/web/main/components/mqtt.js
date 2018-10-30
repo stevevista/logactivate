@@ -8,7 +8,8 @@ class MQTT extends React.Component {
   state = {
     uploading: false,
     topic: 'presence',
-    message: ''
+    message: '',
+    mqttMsgs: []
   }
 
   render() {
@@ -16,6 +17,11 @@ class MQTT extends React.Component {
       <div>
         <pre>
           <p>use a mqtt libary to implement subscribe to <b>{this.state.topic}</b></p>
+          <ul>
+            {
+              this.state.mqttMsgs.map((s, i) => (<li key ={i}>{s}</li>))
+            }
+          </ul>
         </pre>
         <div>
           <div>
@@ -63,6 +69,16 @@ class MQTT extends React.Component {
   }
 
   componentDidMount() {
+    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt/presence`)
+    ws.onopen = () => {
+      const mqttMsgs = [...this.state.mqttMsgs, 'connected']
+      this.setState({mqttMsgs})
+    }
+
+    ws.onmessage = (data) => {
+      const mqttMsgs = [...this.state.mqttMsgs, data.data]
+      this.setState({mqttMsgs})
+    }
   }
 }
 

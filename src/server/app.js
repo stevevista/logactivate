@@ -53,14 +53,25 @@ app
 app.use(serveStatic('/', path.join(__dirname, '../public'), {gzip: true}))
 
 const server = http.createServer(app.callback())
+if (config.websocket) {
+  require('./services/websocket')(app, server)
+}
 
-if (config.cluster) {
-  const numCPUs = require('os').cpus().length
+let httpsServer
+if (config.sslOption) {
+  httpsServer = https.createServer(config.sslOption, app.callback())
+  if (config.websocket) {
+    require('./services/websocket')(app, httpsServer)
+  }
+}
+
+const numCPUs = require('os').cpus().length
+if (config.cluster && numCPUs > 1) {
 
   if (cluster.isMaster) {
     logger.info(`http server on ${config.port}, on ${numCPUs} cores`)
     console.log(`http server on ${config.port}, on ${numCPUs} cores`)
-    if (config.sslOption) {
+    if (httpsServer) {
       console.log('https enabled')
     }
   
@@ -79,19 +90,19 @@ if (config.cluster) {
     })
   } else {
     server.listen(config.port)
-    if (config.sslOption) {
-      https.createServer(config.sslOption, app.callback()).listen(443)
+    if (httpsServer) {
+      httpsServer.listen(443)
     }
   }  
 } else {
   logger.info(`http server on ${config.port}, on single core mode`)
   console.log(`http server on ${config.port}, on single core mode`)
-  if (config.sslOption) {
+  if (httpsServer) {
     console.log('https enabled')
   }
   server.listen(config.port)
-  if (config.sslOption) {
-    https.createServer(config.sslOption, app.callback()).listen(443)
+  if (httpsServer) {
+    httpsServer.listen(443)
   }
 }
 

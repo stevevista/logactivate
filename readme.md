@@ -81,41 +81,38 @@ sysadmin:
 
 # API
 ## Log
-* http://[IP Address]:[port]/log/report
+### http://[host]/log/report
   - method: POST
+  - fields:
+    * imei required
+    * sn
+    * latitude
+    * longitude
+    * sw_version
+    * hw_version
+    * bb_version
   - body: should be json encoded (application/json) or urlencoded
-  - response: on success, HTTP response status will be 200, othewise, the status incidates error number, and responseBody contain error message
+  - response: on success, HTTP response status will be 2xx, othewise, the status incidates error number, and responseBody contain error message
   - notice: All information in http body will be append to logfiles (default is storage/exceptions.log)
 
+- A typcial request
+```
+curl http://localhost:3001/log/report -d "imei=777&exception=ddsfsdf&sw_version=1.1.0&latitude=0.032&longitude=12.000"
+```
 ------------------------------------------------------
-### report optional fields
-* imei
-* sn
-* latitude
-* longitude
-* sw_version
-* hw_version
-* bb_version
-------------------------------------------------------
-
-* http://[IP Address]:[port]/log/upload
+### http://[host]/log/upload
   - method: POST
+  - fields:
+    * imei required
+    * file reuqired
   - body: multipart format, contain field imei && a attached file
-  - response: on success, HTTP response status will be 200, othewise, the status incidates error number, and responseBody contain error message
+  - response: on success, HTTP response status will be 2xx, othewise, the status incidates error number, and responseBody contain error message
   - notice: the file will be stored in storage/[imei]/orginalFilename
-#### examples
-- test with curl
+  - A typcial request:
 ```
-curl -d "imei=777&exception=ddsfsdf" "http://localhost:3001/log/report"
-{}
-
-curl -F "file=@card.txt" -F "imei=777" http://localhost:3001/log/upload
-{}
-
-curl -F "file=@card.txt" http://localhost:3001/log/upload
-{"message":"invalid imei parameters"}
+curl -F "file=@data.bin" -F "imei=777" http://localhost:3001/log/upload
 ```
-suppose the card.txt content is 'data', the HTTP body data will be
+suppose the data.bin content is 'data', the HTTP body data will be
 ```
 --------------------------8d7d3d79e075f69d
 Content-Disposition: form-data; name="file"; filename="card.txt"
@@ -129,6 +126,7 @@ Content-Disposition: form-data; name="imei"
 --------------------------8d7d3d79e075f69d--
 ...
 ```
+
 #### Split large upload file to multi-trunks
 ```
 curl -F "file=@data.bin" -F "imei=222222222" -F "trunks=1" http://localhost:3001/log/upload

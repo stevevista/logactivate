@@ -1,9 +1,10 @@
 import React from 'react'
-import { Table, Button, Popover } from 'antd'
+import { Table, Button, Tooltip } from 'antd'
 import axios from 'axios'
 import moment from 'moment'
 import { injectIntl } from 'react-intl'
 import { connect } from 'react-redux'
+import copy from 'copy-to-clipboard'
 
 class Log extends React.Component {
   state = {
@@ -61,6 +62,14 @@ class Log extends React.Component {
           logLists[imei] = data
           this.setState({logLists})
         })
+
+      axios.post('/user/share-token', {
+        level: 2,
+        max_age: 60 * 60
+      })
+        .then(({data}) => {
+          this.setState({shareToken: data})
+        })
     }
   }
 
@@ -78,24 +87,23 @@ class Log extends React.Component {
         <div>
           {
             Object.keys(info).map(k => (
-              <span key={k}>{k} ： {info[k]}</span>
+              <p key={k}>{k} ： {info[k]}</p>
             ))
           }
-          {
-            this.state.logLists[imei] && this.state.logLists[imei].map(p => (
-              <p key={p.id}>
-                <a href={p.url}>{p.filename}</a>
-                <Popover
-                  content={<p>{p.url + '?access_token=' + this.state.shareToken}</p>}
-                  title="1小时有效"
-                  trigger="click"
-                  visible={this.state.shareLinkVisible}
-                  onVisibleChange={this.handleVisibleChange}
-                >
-                  <Button shape="circle" size="small" icon="share-alt" style={{marginLeft: 20}} onClick={this.shareLogLink}/>
-                </Popover>
-              </p>))
-          }
+          <p>Attachments ：</p>
+          <ul>
+            {
+              this.state.logLists[imei] && this.state.logLists[imei].map(p => (
+                <li key={p.id}>
+                  <a href={p.url}>{p.filename}</a>
+                  <CopyToClipboard text={p.url + '?access_token=' + this.state.shareToken} className="setting-button">
+                    <Tooltip title="复制下载链接，1小时内有效">
+                      <Button shape="circle" size="small" icon="copy"/>
+                    </Tooltip>
+                  </CopyToClipboard>
+                </li>))
+            }
+          </ul>
         </div>
       )
     }
@@ -195,6 +203,10 @@ class Log extends React.Component {
     })
       .then(({data}) => {
         this.setState({shareToken: data})
+        copy(data, {
+          debug: true,
+          message: 'Press #{key} to copy'
+        })
       })
   }
 }
@@ -208,3 +220,44 @@ function mapStates (state) {
 export default injectIntl(connect(mapStates)(Log), {
   withRef: true
 })
+
+class CopyToClipboard extends React.PureComponent {
+  static defaultProps = {
+    onCopy: undefined
+  };
+
+
+  onClick = event => {
+    const {
+      text,
+      onCopy,
+      children
+    } = this.props
+
+    const elem = React.Children.only(children)
+
+    const result = copy(text)
+
+    if (onCopy) {
+      onCopy(text, result)
+    }
+
+    // Bypass onClick if it was present
+    if (elem && elem.props && typeof elem.props.onClick === 'function') {
+      elem.props.onClick(event)
+    }
+  }
+
+
+  render() {
+    const {
+      text: _text,
+      onCopy: _onCopy,
+      children,
+      ...props
+    } = this.props
+    const elem = React.Children.only(children)
+
+    return React.cloneElement(elem, {...props, onClick: this.onClick})
+  }
+}
