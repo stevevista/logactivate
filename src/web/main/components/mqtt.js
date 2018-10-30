@@ -1,6 +1,5 @@
 import React from 'react'
-import { Button, Icon, message, Input } from 'antd'
-import axios from 'axios'
+import { Button, Icon, Input } from 'antd'
 import { injectIntl } from 'react-intl'
 import { connect } from 'react-redux'
 
@@ -28,11 +27,11 @@ class MQTT extends React.Component {
             <Input defaultValue={this.state.topic} placeholder="Topic" style={{width: 300}} onChange={(e) => { this.setState({topic: e.target.value}) }}/>
           </div>
           <div>
-            <Input.TextArea placeholder="Description (optional)" autosize={{ minRows: 2, maxRows: 6 }} onChange={(e) => { this.setState({message: e.target.value}) }}/>
+            <Input.TextArea placeholder="Message" autosize={{ minRows: 2, maxRows: 6 }} onChange={(e) => { this.setState({message: e.target.value}) }}/>
           </div>
         </div>
         <Button
-          disabled={!this.state.topic || !this.state.message}
+          disabled={!this.state.wsOpend || !this.state.message}
           loading={this.state.uploading}
           onClick={this.publish}>
           <Icon type="upload"/> Publish
@@ -42,41 +41,42 @@ class MQTT extends React.Component {
   }
 
   publish = () => {
-    
-    this.setState({
-      uploading: true
-    })
-
-    axios.post(
-      '/mqtt/pub',
-      {
-        topic: this.state.topic,
-        message: this.state.message
-      }
-    )
-      .then(() => {
-        message.success(`message publish successfully`)
-        this.setState({
-          uploading: false
-        })
-      })
-      .catch(e => {
-        message.error(`message publish failed.`)
-        this.setState({
-          uploading: false
-        })
-      })
+    this.ws.send(this.state.message)
   }
 
   componentDidMount() {
-    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt/presence`)
+    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt/dialogue/presence`)
+    this.ws = ws
+
     ws.onopen = () => {
-      const mqttMsgs = [...this.state.mqttMsgs, 'connected']
-      this.setState({mqttMsgs})
+      const mqttMsgs = [...this.state.mqttMsgs, '[connected]']
+      if (mqttMsgs.length > 30) {
+        mqttMsgs.shift()
+      }
+      this.setState({mqttMsgs, wsOpend: true})
+    }
+
+    ws.onerror = () => {
+      const mqttMsgs = [...this.state.mqttMsgs, '[error]']
+      if (mqttMsgs.length > 30) {
+        mqttMsgs.shift()
+      }
+      this.setState({mqttMsgs, wsOpend: false})
+    }
+
+    ws.onclose = () => {
+      const mqttMsgs = [...this.state.mqttMsgs, '[closed]']
+      if (mqttMsgs.length > 30) {
+        mqttMsgs.shift()
+      }
+      this.setState({mqttMsgs, wsOpend: false})
     }
 
     ws.onmessage = (data) => {
       const mqttMsgs = [...this.state.mqttMsgs, data.data]
+      if (mqttMsgs.length > 30) {
+        mqttMsgs.shift()
+      }
       this.setState({mqttMsgs})
     }
   }
