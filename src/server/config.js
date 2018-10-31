@@ -29,7 +29,9 @@ let config = {
   tmpdir: 'tmp',
   ssldir: 'ssl',
   ssl: true,
-  mqttServer: 'mqtt://localhost',
+  mqtt: {
+    brokerUrl: 'mqtt://localhost'
+  },
   session: {
     maxAge: 24 * 60 * 60 * 1000
   },

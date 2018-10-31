@@ -41,11 +41,11 @@ class MQTT extends React.Component {
   }
 
   publish = () => {
-    this.ws.send(this.state.message)
+    this.ws.send(this.props.authed.username + ': ' + this.state.message)
   }
 
   componentDidMount() {
-    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt/dialogue/presence`)
+    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt/presence`)
     this.ws = ws
 
     ws.onopen = () => {
