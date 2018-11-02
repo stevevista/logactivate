@@ -26,11 +26,11 @@ function users(sequelize, DataTypes) {
     return bcrypt.hash(password, 10)
   }
 
-  db.createEx = async function (fields) {
+  db.createEx = async function (fields, option) {
     if ('password' in fields) {
       fields.password = await db.hashPassword(fields.password)
     }
-    await db.create(fields)
+    await db.create(fields, option)
   }
 
   db.updateEx = async function (fields, option) {

@@ -34,11 +34,17 @@ function decodeToken(token) {
 
 function signToken (obj, ctx, opt = {}) {
   const expiresIn = opt.maxAge || (config.session.maxAge / 1000)
-  const signedTok = jwt.sign(obj, config.session.secrets, {expiresIn})
-  if (ctx) {
-    ctx.cookies.set('access_token', signedTok, { maxAge: config.session.maxAge })
-  }
-  return signedTok
+  return new Promise((resolve, reject) => {
+    jwt.sign(obj, config.session.secrets, {expiresIn}, (err, token) => {
+      if (err) reject(err)
+      else {
+        if (ctx) {
+          ctx.cookies.set('access_token', token, { maxAge: config.session.maxAge })
+        }
+        resolve(token)
+      }
+    })
+  })
 }
 
 const levels = {

@@ -33,7 +33,7 @@ router.post('/auth', async ctx => {
     username: dbuser.username,
     level: dbuser.level
   }
-  signToken(tok, ctx)
+  await signToken(tok, ctx)
 
   ctx.body = tok
 })
@@ -169,7 +169,7 @@ router.post('/share-token', authenticateRequird(), async ctx => {
     level: params.level,
     owner: ctx.state.decoded_token.username
   }
-  const signed = signToken(tok, null, {maxAge: params.max_age})
+  const signed = await signToken(tok, null, {maxAge: params.max_age})
 
   ctx.body = signed
 })
