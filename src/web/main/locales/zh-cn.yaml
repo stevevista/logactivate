@@ -13,3 +13,6 @@ settings.server-group: 服务器
 settings.user-group: 登陆信息
 settings.users-group: 用户列表
 sidebar.setting: 设置
+ota.upload: 上传
+ota.select-file: 选择文件包
+ota.optional-desc: 版本描述 (可选)

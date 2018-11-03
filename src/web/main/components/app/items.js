@@ -5,28 +5,28 @@ export default [
     icon: Icon,
     iconType: 'cloud',
     label: 'Logview',
-    path: 'log',
+    path: '/log',
     component: require('../log').default
   },
   {
     icon: Icon,
     iconType: 'link',
     label: 'OTA',
-    path: 'ota',
+    path: '/ota',
     component: require('../ota').default
   },
   {
     icon: Icon,
     iconType: 'setting',
     messageId: 'sidebar.setting',
-    path: 'test',
+    path: '/setting',
     component: require('../settings').default
   },
   {
     icon: Icon,
     iconType: 'wechat',
     label: 'MQTT',
-    path: 'mqtt',
+    path: '/mqtt',
     component: require('../mqtt').default
   }
 ]

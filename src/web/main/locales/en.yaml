@@ -11,3 +11,6 @@ settings.user-group: Login info
 settings.users-group: User List
 settings.exceptionPath: Exceptions Info
 sidebar.setting: Setting
+ota.upload: Upload
+ota.select-file: Select file
+ota.optional-desc: Description (optional)

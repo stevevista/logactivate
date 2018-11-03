@@ -106,12 +106,12 @@ class OTA extends React.Component {
             <Input placeholder="Version" style={{width: 300}} onChange={(e) => { this.setState({edit_version: e.target.value}) }}/>
           </div>
           <div>
-            <Input.TextArea placeholder="Description (optional)" autosize={{ minRows: 2, maxRows: 6 }} onChange={(e) => { this.setState({edit_desc: e.target.value}) }}/>
+            <Input.TextArea placeholder={this.props.intl.formatMessage({id: 'ota.optional-desc'})} autosize={{ minRows: 2, maxRows: 6 }} onChange={(e) => { this.setState({edit_desc: e.target.value}) }}/>
           </div>
         </div>
         <Upload {...props}>
           <Button>
-            <Icon type="upload" /> Select package file
+            <Icon type="folder-open" /> {this.props.intl.formatMessage({id: 'ota.select-file'})}
           </Button>
         </Upload>
         <Progress percent={this.state.uploadPercent} />
@@ -119,7 +119,7 @@ class OTA extends React.Component {
           disabled={!this.state.edit_file || !this.state.edit_version}
           loading={this.state.uploading}
           onClick={this.handleUpload}>
-          <Icon type="upload"/> Upload
+          <Icon type="upload"/> {this.props.intl.formatMessage({id: 'ota.upload'})}
         </Button>
       </div>
     )
