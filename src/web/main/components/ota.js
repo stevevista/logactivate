@@ -1,5 +1,5 @@
 import React from 'react'
-import { Table, Upload, Button, Icon, message, Input, Modal } from 'antd'
+import { Table, Upload, Button, Icon, message, Input, Modal, Progress } from 'antd'
 import axios from 'axios'
 import moment from 'moment'
 import { injectIntl } from 'react-intl'
@@ -13,7 +13,8 @@ class OTA extends React.Component {
     sorter: {},
     loading: false,
     edit_file: null,
-    uploading: false
+    uploading: false,
+    uploadPercent: 0
   }
 
   columns = [{
@@ -91,7 +92,8 @@ class OTA extends React.Component {
       fileList: this.state.edit_file ? [this.state.edit_file] : [],
       beforeUpload: (file) => {
         this.setState({
-          edit_file: file
+          edit_file: file,
+          uploadPercent: 0
         })
         return false
       }
@@ -112,6 +114,7 @@ class OTA extends React.Component {
             <Icon type="upload" /> Select package file
           </Button>
         </Upload>
+        <Progress percent={this.state.uploadPercent} />
         <Button 
           disabled={!this.state.edit_file || !this.state.edit_version}
           loading={this.state.uploading}
@@ -134,7 +137,16 @@ class OTA extends React.Component {
     formData.append('version', this.state.edit_version)
     axios.post(
       '/ota/upload',
-      formData
+      formData,
+      {
+        onUploadProgress: (evt) => {
+          console.log('=>', evt)
+          if (evt.lengthComputable) {
+            const uploadPercent = evt.loaded / evt.total * 100
+            this.setState({uploadPercent})
+          }
+        }
+      }
     )
       .then(() => {
         this.refresh()
@@ -166,7 +178,6 @@ class OTA extends React.Component {
     })
       .then(res => {
         const {data} = res
-        console.log(data)
         const pagination = { ...this.state.pagination }
 
         pagination.total = data.totalCount
