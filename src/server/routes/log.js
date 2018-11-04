@@ -1,6 +1,7 @@
 'use strict'
 const Router = require('koa-router')
 const koaBody = require('koa-body')
+const range = require('koa-range')
 const Joi = require('joi')
 const Sequelize = require('sequelize')
 const path = require('path')
@@ -166,7 +167,7 @@ router.get('/files/:imei', authLevel('reporter'), async ctx => {
   ctx.body = results
 })
 
-router.get('/download/:imei/:log', authLevel('reporter'), async ctx => {
+router.get('/download/:imei/:log', authLevel('reporter'), range, async ctx => {
   const filepath = ctx.db.log_files.constructStorePath(ctx.params.imei, ctx.params.log)
   ctx.attachment(ctx.params.log)
   await send(ctx, filepath, {root: '/'})

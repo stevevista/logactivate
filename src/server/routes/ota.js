@@ -1,5 +1,6 @@
 'use strict'
 const Router = require('koa-router')
+const range = require('koa-range')
 const fs = require('../utils/async-fs')
 const uuid = require('uuid/v1')
 const send = require('koa-send')
@@ -110,7 +111,7 @@ router.get('/versions', async ctx => {
   ctx.body = results
 })
 
-router.get('/download/:firmware', async ctx => {
+router.get('/download/:firmware', range, async ctx => {
   const filepath = ctx.db.ota_packages.constructStorePath(ctx.params.firmware)
   ctx.attachment(ctx.firmware)
   await send(ctx, filepath, {root: '/'})
