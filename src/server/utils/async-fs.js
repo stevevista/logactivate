@@ -72,20 +72,33 @@ async function forceMove(oldPath, newPath) {
   }
 }
 
-function copy (src, dest) {
-  return new Promise((resolve, reject) => {
+async function copy (src, dest) {
+  if (typeof src === 'string') {
+    src = [src]
+  }
+
+  return new Promise(async (resolve, reject) => {
     const ws = fs.createWriteStream(dest)
     ws.on('error', err => reject(err))
     ws.on('close', () => resolve())
 
     if (typeof src === 'string') {
-      src = [src]
-    }
-
-    for (const p of src) {
-      const is = fs.createReadStream(p)
-      is.pipe(ws)
+      const is = fs.createReadStream(src)
       is.on('error', err => reject(err))
+      is.pipe(dest, opts)
+    } else {
+      for (let i = 0; i < src.length; i++) {
+        let opts = undefined
+        if (i < src.length - 1) {
+          opts = {end: false}
+        }
+        const is = fs.createReadStream(src[i])
+        is.on('error', err => reject(err))
+        is.pipe(ws, opts)
+        await new Promise((resolve) => {
+          is.on('close', () => resolve())
+        })
+      }
     }
   })
 }
