@@ -45,7 +45,7 @@ class MQTT extends React.Component {
   }
 
   componentDidMount() {
-    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt/presence`)
+    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt/.presence`)
     this.ws = ws
 
     ws.onopen = () => {

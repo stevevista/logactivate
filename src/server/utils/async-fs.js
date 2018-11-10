@@ -85,10 +85,10 @@ async function copy (src, dest) {
     if (typeof src === 'string') {
       const is = fs.createReadStream(src)
       is.on('error', err => reject(err))
-      is.pipe(dest, opts)
+      is.pipe(dest)
     } else {
       for (let i = 0; i < src.length; i++) {
-        let opts = undefined
+        let opts
         if (i < src.length - 1) {
           opts = {end: false}
         }
