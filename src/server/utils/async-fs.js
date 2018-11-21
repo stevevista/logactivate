@@ -67,38 +67,32 @@ async function forceMove(oldPath, newPath) {
   try {
     await rename(oldPath, newPath)
   } catch (e) {
+    // fallback to copy & delete
     await copy(oldPath, newPath)
-    unlink(oldPath)
+    await unlink(oldPath)
   }
 }
 
 async function copy (src, dest) {
-  if (typeof src === 'string') {
-    src = [src]
-  }
-
   return new Promise(async (resolve, reject) => {
-    const ws = fs.createWriteStream(dest)
-    ws.on('error', err => reject(err))
-    ws.on('close', () => resolve())
+    const ws = fs.createWriteStream(dest, { encoding: null })
+    ws.on('error', reject)
+    ws.on('close', resolve)
 
     if (typeof src === 'string') {
-      const is = fs.createReadStream(src)
-      is.on('error', err => reject(err))
-      is.pipe(dest)
+      const is = fs.createReadStream(src, { encoding: null })
+      is.on('error', reject)
+      is.pipe(ws)
     } else {
-      for (let i = 0; i < src.length; i++) {
-        let opts
-        if (i < src.length - 1) {
-          opts = {end: false}
-        }
-        const is = fs.createReadStream(src[i])
-        is.on('error', err => reject(err))
-        is.pipe(ws, opts)
+      for (const f of src) {
+        const is = fs.createReadStream(f, { encoding: null })
+        is.on('error', reject)
+        is.pipe(ws, {end: false})
         await new Promise((resolve) => {
-          is.on('close', () => resolve())
+          is.on('end', resolve)
         })
       }
+      ws.close()
     }
   })
 }
