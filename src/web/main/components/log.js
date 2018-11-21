@@ -14,12 +14,8 @@ class Log extends React.Component {
     sorter: {},
     loading: false,
     logLists: {},
-    shareLinkVisible: false,
-    shareToken: null
-  }
-
-  handleVisibleChange = (shareLinkVisible) => {
-    this.setState({ shareLinkVisible })
+    shareToken: null,
+    shareTokenTime: null
   }
 
   columns = [{
@@ -68,7 +64,10 @@ class Log extends React.Component {
         max_age: 60 * 60
       })
         .then(({data}) => {
-          this.setState({shareToken: data})
+          this.setState({
+            shareToken: data,
+            shareTokenTime: Date.now()
+          })
         })
     }
   }
@@ -97,7 +96,7 @@ class Log extends React.Component {
                 <li key={p.id}>
                   <a href={p.url}>{p.filename}</a>
                   <CopyToClipboard text={p.url + '?access_token=' + this.state.shareToken} className="setting-button">
-                    <Tooltip title="复制下载链接，1小时内有效">
+                    <Tooltip title={this.props.intl.formatMessage({id: 'log.copy_link_tip'})}>
                       <Button shape="circle" size="small" icon="copy"/>
                     </Tooltip>
                   </CopyToClipboard>
@@ -194,20 +193,6 @@ class Log extends React.Component {
       sortOrder: sorter.order,
       ...filters
     })
-  }
-
-  shareLogLink = () => {
-    axios.post('/user/share-token', {
-      level: 2,
-      max_age: 60 * 60
-    })
-      .then(({data}) => {
-        this.setState({shareToken: data})
-        copy(data, {
-          debug: true,
-          message: 'Press #{key} to copy'
-        })
-      })
   }
 }
 

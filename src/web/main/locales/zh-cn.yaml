@@ -16,3 +16,4 @@ sidebar.setting: 设置
 ota.upload: 上传
 ota.select-file: 选择文件包
 ota.optional-desc: 版本描述 (可选)
+log.copy_link_tip: 复制下载链接，1小时内有效

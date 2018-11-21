@@ -75,21 +75,23 @@ router.post('/upload', koaBody({
     eot: Joi.number().integer()
   })
 
+  const imei = params.imei
   const file = ctx.request.files.file
+  const filename = file.name
   const ip = ctx.ip
-  const dest = ctx.db.log_files.constructStorePath(params.imei, file.name)
+  const dest = ctx.db.log_files.constructStorePath(imei, filename)
 
   const trunkFiles = []
 
   if (params.trunks) {
     if (!params.eot) {
       // don't move to dest yet
-      await fs.rename(file.path, fileTrunkPath(params.imei, file.name, params.trunks))
+      await fs.rename(file.path, fileTrunkPath(imei, filename, params.trunks))
       ctx.body = {}
       return
     } else {
       for (let i = 1; i < params.trunks; i++) {
-        trunkFiles.push(fileTrunkPath(params.imei, file.name, i))
+        trunkFiles.push(fileTrunkPath(imei, filename, i))
       }
       trunkFiles.push(file.path)
 
@@ -102,8 +104,8 @@ router.post('/upload', koaBody({
 
   await ctx.db.log_files.create({
     ip,
-    imei: params.imei,
-    filename: file.name
+    imei,
+    filename
   })
   ctx.body = {}
 

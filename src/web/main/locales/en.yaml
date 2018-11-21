@@ -14,3 +14,4 @@ sidebar.setting: Setting
 ota.upload: Upload
 ota.select-file: Select file
 ota.optional-desc: Description (optional)
+log.copy_link_tip: Copy the link, which will expires in 1 hour
