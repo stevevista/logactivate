@@ -1,13 +1,10 @@
 'use strict'
-const http = require('http')
-const https = require('https')
 const path = require('path')
 const cluster = require('cluster')
-const Koa = require('koa')
+const {Koa, Static, WebSocket} = require('koa-app-server')
 const koaBody = require('koa-body')
 const router = require('./routes')
 const db = require('./models')
-const serveStatic = require('./static')
 const logact = require('./logact')
 const config = require('./config')
 
@@ -50,19 +47,10 @@ app
   .use(router.routes())
   .use(router.allowedMethods())
 
-app.use(serveStatic('/', path.join(__dirname, '../public'), {gzip: true}))
+app.use(Static('/', path.join(__dirname, '../public'), {gzip: true}))
 
-const server = http.createServer(app.callback())
 if (config.websocket) {
-  require('./services/websocket')(app, server)
-}
-
-let httpsServer
-if (config.sslOption) {
-  httpsServer = https.createServer(config.sslOption, app.callback())
-  if (config.websocket) {
-    require('./services/websocket')(app, httpsServer)
-  }
+  app.use(WebSocket(require('./services/websocket').routes()))
 }
 
 const numCPUs = require('os').cpus().length
@@ -71,7 +59,7 @@ if (config.cluster && numCPUs > 1) {
   if (cluster.isMaster) {
     logger.info(`http server on ${config.port}, on ${numCPUs} cores`)
     console.log(`http server on ${config.port}, on ${numCPUs} cores`)
-    if (httpsServer) {
+    if (config.sslOption) {
       console.log('https enabled')
     }
   
@@ -89,21 +77,21 @@ if (config.cluster && numCPUs > 1) {
       setTimeout(() => cluster.fork(), 2000)
     })
   } else {
-    server.listen(config.port)
-    if (httpsServer) {
-      httpsServer.listen(443)
-    }
+    app.listen({
+      port: config.port,
+      sslOption: config.sslOption
+    })
   }  
 } else {
   logger.info(`http server on ${config.port}, on single core mode`)
   console.log(`http server on ${config.port}, on single core mode`)
-  if (httpsServer) {
+  if (config.sslOption) {
     console.log('https enabled')
   }
-  server.listen(config.port)
-  if (httpsServer) {
-    httpsServer.listen(443)
-  }
+  app.listen({
+    port: config.port,
+    sslOption: config.sslOption
+  })
 }
 
 module.exports = app

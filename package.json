@@ -40,8 +40,7 @@
     "sequelize": "^4.41.0",
     "sqlite3": "^4.0.3",
     "streamroller": "^0.8.5",
-    "tedious": "^2.6.4",
-    "ws": "^6.1.0"
+    "tedious": "^2.6.4"
   },
   "devDependencies": {
     "@babel/core": "^7.1.2",
