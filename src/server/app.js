@@ -53,45 +53,18 @@ if (config.websocket) {
   app.use(WebSocket(require('./services/websocket').routes()))
 }
 
-const numCPUs = require('os').cpus().length
-if (config.cluster && numCPUs > 1) {
-
-  if (cluster.isMaster) {
-    logger.info(`http server on ${config.port}, on ${numCPUs} cores`)
-    console.log(`http server on ${config.port}, on ${numCPUs} cores`)
+app.start({
+  port: config.port,
+  ssl: config.sslOption,
+  cluster: config.cluster
+}, info => {
+  if (info.master) {
+    logger.info(`http server on ${config.port}, on ${info.numCPUs} cpus`)
+    console.log(`http server on ${config.port}, on ${info.numCPUs} cpus`)
     if (config.sslOption) {
       console.log('https enabled')
     }
-  
-    for (let i = 0; i < numCPUs; i++) {
-      cluster.fork()
-    }
-  
-    cluster.on('listening', (worker, address) => {
-      logger.debug(`start core: ${worker.id}`)
-    })
-  
-    cluster.on('exit', (worker, code, signal) => {
-      console.log(signal)
-      logger.warn(`reboot core: ${worker.id}`)
-      setTimeout(() => cluster.fork(), 2000)
-    })
-  } else {
-    app.listen({
-      port: config.port,
-      sslOption: config.sslOption
-    })
-  }  
-} else {
-  logger.info(`http server on ${config.port}, on single core mode`)
-  console.log(`http server on ${config.port}, on single core mode`)
-  if (config.sslOption) {
-    console.log('https enabled')
   }
-  app.listen({
-    port: config.port,
-    sslOption: config.sslOption
-  })
-}
+})
 
 module.exports = app
