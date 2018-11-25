@@ -1,6 +1,5 @@
 'use strict'
 const path = require('path')
-const cluster = require('cluster')
 const {Koa, Static, WebSocket} = require('koa-app-server')
 const koaBody = require('koa-body')
 const router = require('./routes')

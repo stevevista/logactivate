@@ -107,6 +107,11 @@ router.post('/upload', koaBody({
     imei,
     filename
   })
+  logact.log('upload', {
+    ip,
+    imei,
+    filename: dest
+  })
   ctx.body = {}
 
   // remove trunks after response to user
