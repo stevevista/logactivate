@@ -21,7 +21,7 @@ const app = new Koa()
 app.context.db = db
 
 app.on('error', err => {
-  console.error('server error', err)
+  logger.error('server error', err)
 })
 
 app.use(async (ctx, next) => {
