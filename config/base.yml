@@ -18,3 +18,4 @@ ota:
 sysadmin:
   username: sysadmin
   password: sysadmin
+maxUploadFileSize: 209715200

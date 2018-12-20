@@ -66,7 +66,8 @@ function fileTrunkPath(imei, filename, trunks) {
 router.post('/upload', koaBody({
   multipart: true,
   formidable: {
-    uploadDir: config.tmpdir
+    uploadDir: config.tmpdir,
+    maxFileSize: config.maxUploadFileSize
   }
 }), async ctx => {
   const params = validate(ctx.request.body, {

@@ -40,7 +40,8 @@ router.get('/packages', authLevel('reporter'), async ctx => {
 router.post('/upload', authLevel('admin'), koaBody({
   multipart: true,
   formidable: {
-    uploadDir: config.tmpdir
+    uploadDir: config.tmpdir,
+    maxFileSize: config.maxUploadFileSize
   }
 }), async ctx => {
 
