@@ -33,11 +33,11 @@ class Log extends React.Component {
     )
   }, {
     title: 'SW Version',
-    dataIndex: 'swVersion',
+    dataIndex: 'sw_version',
     sorter: true
   }, {
-    title: 'info',
-    dataIndex: 'data'
+    title: 'Title',
+    dataIndex: 'title'
   }, {
     title: 'Update',
     dataIndex: 'updatedAt',
@@ -50,15 +50,6 @@ class Log extends React.Component {
 
   onExpand = (expanded, record) => {
     if (expanded) {
-      const imei = record.imei
-      axios.get('/log/files/' + imei)
-        .then(res => {
-          const {data} = res
-          const logLists = {...this.state.logLists}
-          logLists[imei] = data
-          this.setState({logLists})
-        })
-
       axios.post('/user/share-token', {
         level: 2,
         max_age: 60 * 60
@@ -74,14 +65,7 @@ class Log extends React.Component {
 
   expandedRowRender = (record, index, indent, expanded) => {
     if (expanded) {
-      const imei = record.imei
-      let info = {}
-      try {
-        info = JSON.parse(record.data)
-      } catch (e) {
-        // pass
-      }
-
+      const info = record.data || {}
       return (
         <div>
           {
@@ -92,15 +76,17 @@ class Log extends React.Component {
           <p>Attachments ：</p>
           <ul>
             {
-              this.state.logLists[imei] && this.state.logLists[imei].map(p => (
-                <li key={p.id}>
-                  <a href={p.url}>{p.filename}</a>
-                  <CopyToClipboard text={p.url + '?access_token=' + this.state.shareToken} className="setting-button">
-                    <Tooltip title={this.props.intl.formatMessage({id: 'log.copy_link_tip'})}>
-                      <Button shape="circle" size="small" icon="copy"/>
-                    </Tooltip>
-                  </CopyToClipboard>
-                </li>))
+              record.attachments && record.attachments.map(p => {
+                return (
+                  <li key={p._id}>
+                    <a href={p.url}>{p.filename}</a>
+                    <CopyToClipboard text={p.url + '?access_token=' + this.state.shareToken} className="setting-button">
+                      <Tooltip title={this.props.intl.formatMessage({id: 'log.copy_link_tip'})}>
+                        <Button shape="circle" size="small" icon="copy"/>
+                      </Tooltip>
+                    </CopyToClipboard>
+                  </li>)
+              })
             }
           </ul>
         </div>
@@ -116,7 +102,7 @@ class Log extends React.Component {
           columns={this.columns}
           expandedRowRender={this.expandedRowRender}
           onExpand={this.onExpand}
-          rowKey={record => record.id}
+          rowKey={record => record._id}
           dataSource={this.state.data}
           pagination={this.state.pagination}
           loading={this.state.loading}

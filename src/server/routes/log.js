@@ -1,124 +1,72 @@
 'use strict'
 const Router = require('koa-router')
-const koaBody = require('koa-body')
 const range = require('koa-range')
 const Joi = require('joi')
-const Sequelize = require('sequelize')
 const path = require('path')
 const send = require('koa-send')
+const url = require('url')
 const {validate} = require('../utils/validate')
 const fs = require('../utils/async-fs')
-const logact = require('../logact')
-const {constructQuerySort, constructQueryFilter} = require('../utils/dbhelper')
+const {appendQueryPaging, appendQuerySort, constructQueryFilter} = require('../utils/dbhelper')
 const {authLevel} = require('../auth')
 const config = require('../config')
-
+const PartialUpload = require('koa-partial-upload')
+const uuid = require('uuid/v1')
 const router = Router()
 
 router.get('/', ctx => {
   ctx.body = 'Hello LogActivate!'
 })
 
-const ObjectAttrs = [
-  ['imei', 'imei', ''],
-  ['sn', 'sn', ''],
-  ['latitude', 'latitude', 0.0],
-  ['longitude', 'longitude', 0.0],
-  ['swVersion', 'sw_version', ''],
-  ['hwVersion', 'hw_version', ''],
-  ['bbVersion', 'bb_version', '']
-]
-
-router.post('/report', async ctx => {
+router.post('/upload', PartialUpload({
+  uploadDir: config.tmpdir,
+  maxFileSize: config.maxUploadFileSize
+}), async ctx => {
+  // format document
   let data = ctx.request.body
   if (typeof data.object === 'object') {
     // log cloud style exceptions
     data = data.object
   } else if (typeof data.object === 'string') {
     // log cloud style exceptions
-    try {
-      data = JSON.parse(data.object)
-    } catch (e) {
-      // pass
+    data = JSON.parse(data.object)
+  }
+
+  const ip = ctx.ip
+  const doc = { ip }
+  for (const field in ctx.db.Log.schema.obj) {
+    if (data[field]) {
+      doc[field] = data[field]
+      delete data[field]
     }
   }
 
-  const props = {
-    ip: ctx.ip
-  }
-  for (const attr of ObjectAttrs) {
-    props[attr[0]] = data[attr[1]] || attr[2]
-    delete data[attr[1]]
-  }
+  if (ctx.request.files) {
+    const file = ctx.request.files.file
 
-  props.data = JSON.stringify(data)
-  await ctx.db.log.create(props)
-
-  logact.log('exception', props)
-  
-  ctx.body = {}
-})
-
-function fileTrunkPath(imei, filename, trunks) {
-  return path.join(config.tmpdir, `${imei}.${filename}.${trunks}`)
-}
-
-router.post('/upload', koaBody({
-  multipart: true,
-  formidable: {
-    uploadDir: config.tmpdir,
-    maxFileSize: config.maxUploadFileSize
-  }
-}), async ctx => {
-  const params = validate(ctx.request.body, {
-    imei: Joi.string().alphanum().required(),
-    trunks: Joi.number().integer().min(1),
-    eot: Joi.number().integer()
-  })
-
-  const imei = params.imei
-  const file = ctx.request.files.file
-  const filename = file.name
-  const ip = ctx.ip
-  const dest = ctx.db.log_files.constructStorePath(imei, filename)
-
-  const trunkFiles = []
-
-  if (params.trunks) {
-    if (!params.eot) {
-      // don't move to dest yet
-      await fs.rename(file.path, fileTrunkPath(imei, filename, params.trunks))
+    if (file.partial) {
       ctx.body = {}
       return
-    } else {
-      for (let i = 1; i < params.trunks; i++) {
-        trunkFiles.push(fileTrunkPath(imei, filename, i))
-      }
-      trunkFiles.push(file.path)
-
-      await fs.makeSureFileDir(dest)
-      await fs.copy(trunkFiles, dest)
     }
-  } else {
-    await fs.forceMove(file.path, dest)
+
+    const filename = file.name
+    const storename = uuid()
+    await fs.forceMove(file.path, path.join(config.logdir, storename))
+
+    doc.attachments = [{
+      ip,
+      filename,
+      storename,
+      size: file.size,
+      uploadedAt: new Date()
+    }]
   }
 
-  await ctx.db.log_files.create({
-    ip,
-    imei,
-    filename
-  })
-  logact.log('upload', {
-    ip,
-    imei,
-    filename: dest
-  })
-  ctx.body = {}
+  doc.data = data
 
-  // remove trunks after response to user
-  for (const f of trunkFiles) {
-    await fs.unlink(f)
-  }
+  await ctx.db.Log.saveAttachment(doc)
+
+  ctx.body = { log_id: doc.log_id }
 })
 
 router.get('/exceptions', authLevel('reporter'), async ctx => {
@@ -129,55 +77,55 @@ router.get('/exceptions', authLevel('reporter'), async ctx => {
     sortOrder: Joi.string(),
     'ip[]': [Joi.string(), Joi.array().items(Joi.string())],
     'imei[]': [Joi.string(), Joi.array().items(Joi.string())],
-    'swVersion[]': [Joi.string(), Joi.array().items(Joi.string())]
+    'sw_version[]': [Joi.string(), Joi.array().items(Joi.string())]
   })
 
-  const offset = (params.page - 1) * params.results
-  const option = {
-    limit: params.results,
-    offset
-  }
-
-  constructQuerySort(option, params.sortField, params.sortOrder)
+  const option = {}
   constructQueryFilter(option, params['ip[]'], 'ip', true)
   constructQueryFilter(option, params['imei[]'], 'imei', true)
-  constructQueryFilter(option, params['swVersion[]'], 'swVersion', true)
+  constructQueryFilter(option, params['sw_version[]'], 'sw_version', true)
 
-  const ips = await ctx.db.log.findAll({
-    attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('ip')), 'ip']]
+  const ips = await ctx.db.Log.distinct('ip', {ip: {$ne: null}})
+  const imeis = await ctx.db.Log.distinct('imei', {imei: {$ne: null}})
+  const versions = await ctx.db.Log.distinct('sw_version', {sw_version: {$ne: null}})
+
+  let query = ctx.db.Log.find(option)
+  query = appendQueryPaging(query, params.page, params.results)
+  query = appendQuerySort(query, params.sortField, params.sortOrder)
+
+  const totalCount = await ctx.db.Log.countDocuments(option)
+  const results = await query.lean()
+
+  results.forEach(e => {
+    e.attachments.forEach(a => {
+      a.url = url.format({
+        protocol: ctx.protocol,
+        host: ctx.host,
+        pathname: '/log/files/' + e._id + '/' + a._id
+      })
+    })
   })
-  const imeis = await ctx.db.log.findAll({
-    attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('imei')), 'imei']]
-  })
-  const versions = await ctx.db.log.findAll({
-    attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('swVersion')), 'swVersion']]
-  })
-  const out = await ctx.db.log.findAndCountAll(option)
-  
+
   ctx.body = {
-    totalCount: out.count,
-    results: out.rows,
-    ips: ips.map(r => r.ip).filter(r => r !== ''),
-    imeis: imeis.map(r => r.imei).filter(r => r !== ''),
-    versions: versions.map(r => r.swVersion).filter(r => r !== '')
+    totalCount,
+    results,
+    ips,
+    imeis,
+    versions
   }
 })
 
-router.get('/files/:imei', authLevel('reporter'), async ctx => {
-  const out = await ctx.db.log_files.findAll({
-    where: {imei: ctx.params.imei}
-  })
-  const results = out.map(r => ({
-    id: r.id,
-    filename: r.filename,
-    url: r.fullDownloadURI(ctx)
-  }))
-  ctx.body = results
-})
+router.get('/files/:doc_id/:a_id', authLevel('reporter'), range, async ctx => {
+  const doc = await ctx.db.Log.findById(ctx.params.doc_id)
+  const a = doc ? doc.attachments.id(ctx.params.a_id) : null
+  if (!a) {
+    ctx.status = 400
+    ctx.body = ''
+    return
+  }
 
-router.get('/download/:imei/:log', authLevel('reporter'), range, async ctx => {
-  const filepath = ctx.db.log_files.constructStorePath(ctx.params.imei, ctx.params.log)
-  ctx.attachment(ctx.params.log)
+  const filepath = path.join(config.logdir, a.storename)
+  ctx.attachment(a.filename)
   await send(ctx, filepath, {root: '/'})
 })
 

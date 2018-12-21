@@ -40,8 +40,8 @@ class OTA extends React.Component {
     title: 'File',
     render: (text, record) => (
       <div>
-        <a href={`/ota/download/${record.filename}`}><Icon type="download" className="table-button"/></a>
-        {this.props.authed.level < 2 && <Icon type="delete" className="table-button delete" onClick={() => this.delete(record.id)}/>}
+        <a href={record.url}><Icon type="download" className="table-button"/></a>
+        {this.props.authed.level < 2 && <Icon type="delete" className="table-button delete" onClick={() => this.delete(record._id)}/>}
       </div>
     )
   }]
@@ -70,7 +70,7 @@ class OTA extends React.Component {
       <div>
         <Table
           columns={this.columns}
-          rowKey={record => record.id}
+          rowKey={record => record._id}
           dataSource={this.state.data}
           pagination={this.state.pagination}
           loading={this.state.loading}

@@ -1,8 +1,8 @@
 # Develop
 ## Prerequisites
-- node >= 8.11.0
+- node >= 10.0.0
 - gcc build tools or MSVC 2015/2017
-- MySQL/Postgre/MSSQL (only if not using sqlite)
+- MongoDB
 
 Please read the guide on Nodejs.org to learn how to install node on linux or Windows
 
@@ -61,14 +61,8 @@ appLogSize: 31457280
 appLogFilename: logactivate.log
 exceptionFilename: exceptions.log
 exceptionFilesize: 10M
-database:
-  database: 
-  username:
-  password:
-  storage: database.sqlite
-  host: localhost
-  dialect: sqlite,
-  operatorsAliases: false
+maxUploadFileSize: 200 * 1024 * 1024
+dbUrl: 'mongodb://localhost/logactivate'
 session:
   secrets: abcd.1234
   maxAge: 24 * 60 * 60 * 1000

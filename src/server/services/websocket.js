@@ -1,51 +1,66 @@
 'use strict'
 const Router = require('koa-router')
-const MQTT = require('../utils/mqtt-client')
-const {authenticateRequird} = require('../auth')
+const {MqttClient, brokeMqttOverSocket} = require('mqtt-over-web')
+const {authenticateRequird, signDevice} = require('../auth')
 const config = require('../config')
 
 const router = new Router()
 
-router.all('/mqtt/:topicName/:acc?', authenticateRequird(), async ctx => {
+router.all('/mqtt/:product?/:device?', authenticateRequird(), async ctx => {
+  let client
 
-  const {topicName, acc} = ctx.params
-  const topic = topicName.replace('.', '/')
+  const username = ctx.state.decoded_token.username
+  const mqttCfg = config.mqtt || {}
 
-  const client = new MQTT({
-    ...config.mqtt,
-    username: ctx.state.decoded_token.username,
-    password: ctx.state._token
-  })
+  if (ctx.params.product && ctx.params.device) {
+    const productKey = ctx.params.product
+    const deviceName = ctx.params.device
+    const d = await ctx.db.Device.findOne({
+      productKey,
+      deviceName
+    })
 
-  client.on('connect', () => {
-    if (acc !== 'publish') {
-      client.subscribeAndListen(topic, (err, topic, message) => {
-        if (err) {
-          ctx.websocket.send('subscribe fail', e => { if (e) console.log(e) })
-          ctx.websocket.close()
-          return
-        }
+    if (d) {
+      const brokerUrl = d.brokerUrl || mqttCfg.brokerUrl
+      const deviceSecret = d.deviceSecret
 
-        ctx.websocket.send(message.toString(), e => { if (e) console.log(e) })
-      })
+      if (mqttCfg.brokerUrl && mqttCfg.brokerUrl.indexOf('aliyuncs.com') !== -1) {
+        client = new MqttClient({
+          brokerUrl,
+          productKey,
+          deviceName,
+          deviceSecret
+        })
+      } else {
+        const password = signDevice({
+          username
+        }, {
+          productKey, 
+          deviceName, 
+          deviceSecret
+        })
+
+        client = new MqttClient({
+          brokerUrl,
+          productKey,
+          deviceName,
+          deviceSecret,
+          username,
+          password
+        })
+      }
     }
-  })
+  }
 
-  client.on('error', err => {
-    console.log(err)
-    ctx.websocket.send('mqtt error', e => { if (e) console.log(e) })
-    ctx.websocket.close()
-  })
-
-  ctx.websocket.on('close', () => {
-    client.end()
-  })
-
-  if (acc !== 'subscribe') {
-    ctx.websocket.on('message', (data) => {
-      client.publish(topic, data)
+  if (!client) {
+    client = new MqttClient({
+      brokerUrl: mqttCfg.brokerUrl,
+      username: ctx.state.decoded_token.username,
+      password: ctx.state._token
     })
   }
+
+  brokeMqttOverSocket(client, ctx.websocket)
 })
 
 module.exports = router

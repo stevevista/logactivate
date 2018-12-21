@@ -1,59 +1,66 @@
 'use strict'
 const config = require('../config')
 const path = require('path')
-const url = require('url')
+const mongoose = require('mongoose')
+const uuid = require('uuid/v1')
 
-function Log(sequelize, DataTypes) {
-  const db = sequelize.define('log', {
-    ip: DataTypes.STRING(128),
-    imei: DataTypes.STRING(32),
-    sn: DataTypes.STRING(64),
-    latitude: DataTypes.FLOAT,
-    longitude: DataTypes.FLOAT,
-    swVersion: DataTypes.STRING(128),
-    hwVersion: DataTypes.STRING(128),
-    bbVersion: DataTypes.STRING(128),
-    data: DataTypes.TEXT
-  }, {
-    tableName: 'log',
-    freezeTableName: true,
-    timestamps: true
-  })
+const attachment = new mongoose.Schema({ 
+  ip: String,
+  filename: String,
+  storename: String,
+  size: Number,
+  uploadedAt: Date
+})
 
-  return db
+const schema = new mongoose.Schema({
+  log_id: {type: String, unique: true},
+  ip: String,
+  imei: String,
+  title: String,
+  sn: String,
+  lat: Number,
+  lng: Number,
+  sw_version: String,
+  hw_version: String,
+  data: {},
+  attachments: [attachment]
+}, {
+  timestamps: true
+})
+
+schema.statics.saveAttachment = async function(doc) {
+  let log
+  if (doc.log_id) {
+    log = await this.findOne({log_id: doc.log_id})
+  } else {
+    doc.log_id = uuid()
+  }
+
+  if (log) {
+    for (const k in doc) {
+      if (k === 'attachments') {
+        if (!log.attachments) log.attachments = []
+        log.attachments.push(doc.attachments[0])
+      } else if (k === 'data') {
+        if (!log.data) log.data = {}
+        log.data = {...log.data, ...doc.data}
+      } else {
+        log[k] = doc[k]
+      }
+    }
+  } else {
+    log = new Log(doc)
+  }
+  await log.save()
 }
 
-function Files(sequelize, DataTypes) {
-  const db = sequelize.define('log_files', {
-    ip: DataTypes.STRING(128),
-    imei: DataTypes.STRING(32),
-    filename: DataTypes.STRING(128)
-  }, {
-    tableName: 'log_files',
-    freezeTableName: true,
-    timestamps: true
-  })
-
-  db.constructStorePath = function (imei, filename) {
-    return path.join(config.logdir, imei, filename)
-  }
-
-  db.prototype.storePath = function() {
-    return db.constructStorePath(this.imei, this.filename)
-  }
-
-  db.prototype.fullDownloadURI = function(ctx) {
-    return url.format({
-      protocol: ctx.protocol,
-      host: ctx.host,
-      pathname: '/log/download/' + this.imei + '/' + this.filename
-    })
-  }
-
-  return db
+schema.statics.constructStorePath = function (imei, filename) {
+  return path.join(config.logdir, imei, filename)
 }
+
+const Log = mongoose.model('Log', schema)
+
 
 module.exports = [
-  Log,
-  Files
+  Log
 ]

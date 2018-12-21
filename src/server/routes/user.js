@@ -1,11 +1,8 @@
 'use strict'
 const Router = require('koa-router')
-const Sequelize = require('sequelize')
 const {validate} = require('../utils/validate')
 const Joi = require('joi')
 const {authenticateRequird, authLevel, signToken, isSuper, higherLevelThan} = require('../auth')
-
-const Op = Sequelize.Op
 
 const router = new Router()
 
@@ -19,17 +16,11 @@ router.post('/auth', async ctx => {
     password: Joi.string().required()
   })
 
-  const dbuser = await ctx.db.users.findOne({
-    where: {
-      username: params.username
-    }
-  })
-
-  const authed = dbuser && await dbuser.checkPassword(params.password)
-  ctx.assert(authed, 401, 'wrong user or password')
+  const dbuser = await ctx.db.User.login(params.username, params.password)
+  ctx.assert(dbuser, 401, 'wrong user or password')
 
   const tok = {
-    id: dbuser.id,
+    id: dbuser._id,
     username: dbuser.username,
     level: dbuser.level
   }
@@ -49,23 +40,17 @@ router.post('/password', authenticateRequird(), async ctx => {
     old_password: Joi.string().required()
   })
 
-  const dbuser = await ctx.db.users.findOne({
-    where: {
-      username: ctx.state.decoded_token.username
-    }
+  const dbuser = await ctx.db.User.findOne({
+    username: ctx.state.decoded_token.username
   })
   ctx.assert(dbuser, 400, `${ctx.state.decoded_token.username} not exists!`)
 
-  const ret = await dbuser.checkPassword(params.old_password)
+  const ret = await dbuser.verify(params.old_password)
   ctx.assert(ret, 401, 'wrong password')
 
-  await ctx.db.users.updateEx({
-    password: params.password
-  }, {
-    where: {
-      username: ctx.state.decoded_token.username
-    }
-  })
+  dbuser.password = params.password
+  await dbuser.save()
+
   ctx.body = ''
 })
 
@@ -79,16 +64,14 @@ router.post('/:username/add', authLevel('admin'), async ctx => {
   ctx.assert(higherLevelThan(ctx, params.level), 401, 'bad auth level')
 
   try {
-    await ctx.db.users.createEx({
+    await ctx.db.User.create({
       username: ctx.params.username,
       password: params.password,
       level: params.level,
       creator: ctx.state.decoded_token.username
     })
   } catch (e) {
-    if (e instanceof Sequelize.UniqueConstraintError) {
-      ctx.throw('username already exists')
-    }
+    ctx.throw('username already exists')
     throw e
   }
 
@@ -96,12 +79,10 @@ router.post('/:username/add', authLevel('admin'), async ctx => {
 })
 
 function queryAdminableUser(ctx, option, username) {
-  option.where = {
-    username
-  }
+  option.username = username
 
   if (!isSuper(ctx)) {
-    option.where.creator = ctx.state.decoded_token.username
+    option.creator = ctx.state.decoded_token.username
   }
 }
 
@@ -123,7 +104,7 @@ router.post('/:username/update', authLevel('admin'), async ctx => {
   const option = {}
 
   queryAdminableUser(ctx, option, ctx.params.username)
-  await ctx.db.users.updateEx(fields, option)
+  await ctx.db.User.update(option, fields)
 
   ctx.body = ''
 })
@@ -133,7 +114,7 @@ router.post('/:username/del', authLevel('admin'), async ctx => {
   const option = {}
 
   queryAdminableUser(ctx, option, ctx.params.username)
-  await ctx.db.users.destroy(option)
+  await ctx.db.User.deleteOne(option)
 
   ctx.body = ''
 })
@@ -142,17 +123,13 @@ router.get('/list', authLevel('admin'), async ctx => {
   const option = {}
 
   if (!isSuper(ctx)) {
-    option.where = {
-      creator: ctx.state.decoded_token.username,
-      level: {[Op.gt]: ctx.state.decoded_token.level}
-    }
+    option.creator = ctx.state.decoded_token.username
+    option.level = {$gt: ctx.state.decoded_token.level}
   } else {
-    option.where = {
-      username: {[Op.ne]: ctx.state.decoded_token.username}
-    }
+    option.username = {$ne: ctx.state.decoded_token.username}
   }
 
-  const users = await ctx.db.users.findAll(option)
+  const users = await ctx.db.User.find(option).lean()
   users.forEach(u => { u.password = undefined })
   ctx.body = users
 })

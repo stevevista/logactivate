@@ -1,39 +1,18 @@
-const config = require('../config')
-const path = require('path')
-const url = require('url')
+const mongoose = require('mongoose')
 
-function packages(sequelize, DataTypes) {
-  const db = sequelize.define('ota_packages', {
-    name: DataTypes.STRING(128),
-    version: DataTypes.STRING(128),
-    applyTo: DataTypes.STRING(1024),
-    filename: DataTypes.STRING(128),
-    description: DataTypes.STRING(1024)
-  }, {
-    tableName: 'ota_packages',
-    freezeTableName: true,
-    timestamps: true
-  })
+const schema = new mongoose.Schema({
+  name: String,
+  version: String,
+  applyTo: String,
+  filename: String,
+  storename: String,
+  description: String
+}, {
+  timestamps: true
+})
 
-  db.constructStorePath = function (filename) {
-    return path.join(config.ota.firmwareDir, filename)
-  }
-
-  db.prototype.storePath = function() {
-    return db.constructStorePath(this.filename)
-  }
-
-  db.prototype.fullDownloadURI = function(ctx) {
-    return url.format({
-      protocol: ctx.protocol,
-      host: ctx.host,
-      pathname: '/ota/download/' + this.filename
-    })
-  }
-
-  return db
-}
+const Package = mongoose.model('Package', schema)
 
 module.exports = [
-  packages
+  Package
 ]

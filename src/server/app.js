@@ -4,16 +4,9 @@ const {Koa, Static, WebSocket} = require('koa-app-server')
 const koaBody = require('koa-body')
 const router = require('./routes')
 const db = require('./models')
-const logact = require('./logact')
 const config = require('./config')
 
 const logger = require('log4js').getLogger()
-
-logact.configure({
-  filename: path.join(config.logdir, config.exceptionFilename),
-  maxLogSize: config.exceptionFilesize,
-  backups: config.exceptionBackups
-})
 
 const app = new Koa()
 
@@ -21,22 +14,18 @@ const app = new Koa()
 app.context.db = db
 
 app.on('error', err => {
-  logger.error('server error', err)
-})
-
-app.use(async (ctx, next) => {
-  try {
-    await next()
-  } catch (e) {
-    ctx.status = e.status || 500
-    ctx.body = e.message
+  if (err.ctx) {
+    const ctx = err.ctx
+    ctx.body = err.message
     if (ctx.status === 500) {
-      logger.error(ctx.path, e.message)
+      logger.error(ctx.path, err.message)
     } else {
       if (ctx.status !== 401) {
-        logger.warn(ctx.path, e.message)
+        logger.warn(ctx.path, err.message)
       }
     }
+  } else {
+    logger.fatal('server error', err)
   }
 })
 

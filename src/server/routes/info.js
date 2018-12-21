@@ -10,7 +10,6 @@ router.get('/config', authenticateRequird(), ctx => {
   const cfg = {
     port: config.port,
     logdir: config.logdir,
-    dbStorage: config.database.storage,
     exceptionPath: config.exceptionFilename,
     exceptionFilesize: config.exceptionFilesize,
     cluster: config.cluster,

@@ -18,14 +18,31 @@ function authenticateRequird (required = true) {
       return
     }
     ctx.state._token = token
-    ctx.state.decoded_token = await decodeToken(token)
+    ctx.state.decoded_token = await decodeToken(token, ctx.db)
     await next()
   }
 }
 
-function decodeToken(token) {
+function decodeToken(token, db) {
+  const getKey = (header, callback) => {
+    if (header.productKey && header.deviceName) {
+      console.log(header)
+      db.Device.findOne({productKey: header.productKey, deviceName: header.deviceName})
+        .then(r => {
+          if (!r) {
+            callback(new Error('wrong device'))
+          } else {
+            callback(null, r.deviceSecret)
+          }
+        })
+    } else {
+      const signingKey = config.session.secrets
+      callback(null, signingKey)
+    }
+  }
+
   return new Promise((resolve, reject) => {
-    jwt.verify(token, config.session.secrets, (err, decoded) => {
+    jwt.verify(token, getKey, (err, decoded) => {
       if (err) reject(err)
       else resolve(decoded)
     })
@@ -44,6 +61,15 @@ function signToken (obj, ctx, opt = {}) {
         resolve(token)
       }
     })
+  })
+}
+
+function signDevice (obj, {productKey, deviceName, deviceSecret}) {
+  return jwt.sign(obj, deviceSecret, {
+    header: {
+      productKey,
+      deviceName
+    }
   })
 }
 
@@ -90,6 +116,7 @@ function higherLevelThan(ctx, level) {
 module.exports = {
   authenticateRequird,
   signToken,
+  signDevice,
   decodeToken,
   authLevel,
   isSuper,

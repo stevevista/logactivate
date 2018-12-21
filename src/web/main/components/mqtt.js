@@ -2,11 +2,12 @@ import React from 'react'
 import { Button, Icon, Input } from 'antd'
 import { injectIntl } from 'react-intl'
 import { connect } from 'react-redux'
+import MqttClient from 'mqtt-over-web'
 
 class MQTT extends React.Component {
   state = {
     uploading: false,
-    topic: 'presence',
+    topic: '/presence',
     message: '',
     mqttMsgs: []
   }
@@ -41,44 +42,56 @@ class MQTT extends React.Component {
   }
 
   publish = () => {
-    this.ws.send(this.props.authed.username + ': ' + this.state.message)
+    this.client.publish(this.state.topic, this.state.message).then(() => { console.log('published') })
   }
 
   componentDidMount() {
-    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt/.presence`)
-    this.ws = ws
-
-    ws.onopen = () => {
-      const mqttMsgs = [...this.state.mqttMsgs, '[connected]']
-      if (mqttMsgs.length > 30) {
-        mqttMsgs.shift()
-      }
-      this.setState({mqttMsgs, wsOpend: true})
-    }
-
-    ws.onerror = () => {
-      const mqttMsgs = [...this.state.mqttMsgs, '[error]']
-      if (mqttMsgs.length > 30) {
-        mqttMsgs.shift()
-      }
-      this.setState({mqttMsgs, wsOpend: false})
-    }
-
-    ws.onclose = () => {
-      const mqttMsgs = [...this.state.mqttMsgs, '[closed]']
-      if (mqttMsgs.length > 30) {
-        mqttMsgs.shift()
-      }
-      this.setState({mqttMsgs, wsOpend: false})
-    }
-
-    ws.onmessage = (data) => {
-      const mqttMsgs = [...this.state.mqttMsgs, data.data]
+    this.client = new MqttClient(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt/a11vWRALINU/AvQKEXmnxyrOc20vmZZB`)
+    //this.client = new MqttClient(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt`)
+    this.client.on('connect', () => {
+      const mqttMsgs = [...this.state.mqttMsgs, '[mqtt connected]']
       if (mqttMsgs.length > 30) {
         mqttMsgs.shift()
       }
       this.setState({mqttMsgs})
-    }
+      this.client.subscribe(this.state.topic)
+    })
+
+    this.client.serve('property/set', (data) => {
+      console.log('Received a message: ', JSON.stringify(data))
+    });
+
+    this.client.subscribeAndListen('/presence', function (err, topic, message) {
+      if (err) {
+        throw err
+      }
+        
+      console.log(topic, message)
+    })
+
+    this.client.on('message', (msg) => {
+      const mqttMsgs = [...this.state.mqttMsgs, JSON.stringify(msg)]
+      if (mqttMsgs.length > 30) {
+        mqttMsgs.shift()
+      }
+      this.setState({mqttMsgs})
+    })
+
+    const events = [
+      'socket-open',
+      'socket-error',
+      'socket-close'
+    ]
+
+    events.forEach(evt => {
+      this.client.on(evt, () => {
+        const mqttMsgs = [...this.state.mqttMsgs, `[${evt}]`]
+        if (mqttMsgs.length > 30) {
+          mqttMsgs.shift()
+        }
+        this.setState({mqttMsgs, wsOpend: true})
+      })
+    })
   }
 }
 

@@ -1,48 +1,57 @@
 'use strict'
 const bcrypt = require('bcrypt')
+const mongoose = require('mongoose')
 
-function users(sequelize, DataTypes) {
-  const db = sequelize.define('users', {
-    username: {type: DataTypes.STRING(32), unique: true, allowNull: false},
-    password: DataTypes.STRING(100),
-    creator: DataTypes.STRING(32),
-    level: {type: DataTypes.INTEGER, allowNull: false},
-    disabled: DataTypes.BOOLEAN
-  }, {
-    tableName: 'users',
-    freezeTableName: true,
-    timestamps: true
+const schema = new mongoose.Schema({
+  username: {type: String, unique: true},
+  password: String,
+  creator: String,
+  level: Number,
+  disabled: Boolean,
+  lastLoginAt: Date
+}, {
+  timestamps: true
+})
+
+schema.pre('save', async function (next) {
+  if (this.password && this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 10)
+  }
+  await next()
+})
+
+for (const op of ['update', 'updateOne', 'updateMany', 'findOneAndUpdate']) {
+  schema.pre(op, async function(next) {
+    if ('password' in this._update) {
+      this._update.password = await bcrypt.hash(this._update.password, 10)
+    }
+    await next()
   })
-
-  db.prototype.checkPassword = async function(plain) {
-    if (this.disabled) {
-      return false
-    }
-    const ret = await bcrypt.compare(plain, this.password)
-    return ret
-  }
-
-  db.hashPassword = function(password) {
-    return bcrypt.hash(password, 10)
-  }
-
-  db.createEx = async function (fields, option) {
-    if ('password' in fields) {
-      fields.password = await db.hashPassword(fields.password)
-    }
-    await db.create(fields, option)
-  }
-
-  db.updateEx = async function (fields, option) {
-    if ('password' in fields) {
-      fields.password = await db.hashPassword(fields.password)
-    }
-    await db.update(fields, option)
-  }
-
-  return db
 }
 
+schema.methods.verify = async function(plain) {
+  if (this.disabled) {
+    return false
+  }
+  return bcrypt.compare(plain, this.password)
+}
+
+schema.statics.login = async function(username, password) {
+  const user = await this.findOne({ username })
+  if (!user || user.disabled) {
+    return null
+  }
+  if (await bcrypt.compare(password, user.password)) {
+    user.lastLoginAt = new Date()
+    await user.save()
+    return user
+  } else {
+    return null
+  }
+}
+
+const User = mongoose.model('User', schema)
+
 module.exports = [
-  users
+  User
 ]

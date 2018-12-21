@@ -1,15 +1,27 @@
 'use strict'
-const Sequelize = require('sequelize')
-const Op = Sequelize.Op
 
-function constructQuerySort(option, sortField, sortOrder) {
-  if (sortField) {
-    const order = [sortField]
-    if (sortOrder === 'descend') {
-      order.push('DESC')
-    }
-    option.order = [order]
+function appendQueryPaging(query, page, pageSize) {
+  if (!page || !pageSize) {
+    return query
   }
+
+  const offset = (page - 1) * pageSize
+  if (offset > 0) {
+    query = query.skip(offset)
+  }
+  query = query.limit(pageSize)
+  return query
+}
+
+function appendQuerySort(query, sortField, sortOrder) {
+  if (sortField) {
+    if (sortOrder === 'descend') {
+      query = query.sort({[sortField]: -1})
+    } else {
+      query = query.sort(sortField)
+    }
+  }
+  return query
 }
 
 function constructQueryFilter(option, value, field, strict = false) {
@@ -17,26 +29,31 @@ function constructQueryFilter(option, value, field, strict = false) {
     return
   }
 
-  if (!option.where) {
-    option.where = {}
+  if (!option['$and']) {
+    option['$and'] = []
   }
+
+  const condi = option['$and']
 
   if (value instanceof Array) {
     if (strict) {
-      option.where[field] = {
-        [Op.or]: value.map(n => ({[Op.eq]: n}))
-      }
+      condi.push({
+        $or: value.map(n => ({[field]: n}))
+      })
     } else {
-      option.where[field] = {
-        [Op.or]: value.map(n => ({[Op.like]: `%${n}%`}))
-      }
+      condi.push({
+        $or: value.map(n => ({[field]: new RegExp('^' + n + '$', 'i')}))
+      })
     }
   } else {
-    option.where[field] = strict ? value : `%${value}%`
+    condi.push({
+      [field]: strict ? value : new RegExp('^' + value + '$', 'i')
+    })
   }
 }
 
 module.exports = {
-  constructQuerySort,
+  appendQuerySort,
+  appendQueryPaging,
   constructQueryFilter
 }

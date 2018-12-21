@@ -35,11 +35,7 @@ let config = {
   session: {
     maxAge: 24 * 60 * 60 * 1000
   },
-  database: {
-    host: 'localhost',
-    dialect: 'sqlite',
-    operatorsAliases: false
-  },
+  dbUrl: 'mongodb://localhost/logactivate',
   appLogFilename: 'logactivate.log',
   exceptionFilename: 'exceptions.log',
   exceptionFilesize: '10M',
@@ -72,7 +68,6 @@ if (typeof config.session.maxAge === 'string') {
   config.session.maxAge = ms(config.session.maxAge)
 }
 
-resolvePath(config.database, 'storage', workDir)
 resolvePath(config.ota, 'firmwareDir', workDir)
 resolvePath(config, 'appLogFilename', workDir)
 resolvePath(config, 'tmpdir', workDir)
