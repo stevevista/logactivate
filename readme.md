@@ -53,14 +53,9 @@ logdir: storage
 tmpdir: tmp
 ssldir: ssl
 ssl: true
-exceptionFilename: exceptions.log
-exceptionFilesize: 1M
-exceptionBackups: 100
 appLogLevel: warn
 appLogSize: 31457280
 appLogFilename: logactivate.log
-exceptionFilename: exceptions.log
-exceptionFilesize: 10M
 maxUploadFileSize: 200 * 1024 * 1024
 dbUrl: 'mongodb://localhost/logactivate'
 session:

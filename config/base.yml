@@ -4,9 +4,6 @@ websocket: false
 mqtt:
   brokerUrl: mqtt://localhost
 logdir: storage
-exceptionFilename: exceptions.log
-exceptionFilesize: 10M
-exceptionBackups: 100
 appLogLevel: warn
 appLogSize: 31457280
 database:

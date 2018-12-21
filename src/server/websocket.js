@@ -1,30 +1,32 @@
 'use strict'
 const Router = require('koa-router')
 const {MqttClient, brokeMqttOverSocket} = require('mqtt-over-web')
-const {authenticateRequird, signDevice} = require('../auth')
-const config = require('../config')
+const {authenticateRequird, signDevice} = require('./auth')
+const config = require('./config')
 
 const router = new Router()
 
 router.all('/mqtt/:product?/:device?', authenticateRequird(), async ctx => {
   let client
 
-  const username = ctx.state.decoded_token.username
   const mqttCfg = config.mqtt || {}
+  let brokerUrl = mqttCfg.brokerUrl || 'mqtt:://localhost'
+  const productKey = ctx.params.product
+  const deviceName = ctx.params.device
+  const username = ctx.state.decoded_token.username
+  let password = ctx.state._token
 
-  if (ctx.params.product && ctx.params.device) {
-    const productKey = ctx.params.product
-    const deviceName = ctx.params.device
+  if (productKey && deviceName) { 
     const d = await ctx.db.Device.findOne({
       productKey,
       deviceName
     })
 
     if (d) {
-      const brokerUrl = d.brokerUrl || mqttCfg.brokerUrl
+      brokerUrl = d.brokerUrl || brokerUrl
       const deviceSecret = d.deviceSecret
 
-      if (mqttCfg.brokerUrl && mqttCfg.brokerUrl.indexOf('aliyuncs.com') !== -1) {
+      if (brokerUrl.indexOf('aliyuncs.com') !== -1) {
         client = new MqttClient({
           brokerUrl,
           productKey,
@@ -32,21 +34,12 @@ router.all('/mqtt/:product?/:device?', authenticateRequird(), async ctx => {
           deviceSecret
         })
       } else {
-        const password = signDevice({
+        password = signDevice({
           username
         }, {
           productKey, 
           deviceName, 
           deviceSecret
-        })
-
-        client = new MqttClient({
-          brokerUrl,
-          productKey,
-          deviceName,
-          deviceSecret,
-          username,
-          password
         })
       }
     }
@@ -54,9 +47,11 @@ router.all('/mqtt/:product?/:device?', authenticateRequird(), async ctx => {
 
   if (!client) {
     client = new MqttClient({
-      brokerUrl: mqttCfg.brokerUrl,
-      username: ctx.state.decoded_token.username,
-      password: ctx.state._token
+      brokerUrl,
+      productKey,
+      deviceName,
+      username,
+      password
     })
   }
 

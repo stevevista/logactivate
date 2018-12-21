@@ -38,7 +38,7 @@ app
 app.use(Static('/', path.join(__dirname, '../public'), {gzip: true}))
 
 if (config.websocket) {
-  app.use(WebSocket(require('./services/websocket').routes()))
+  app.use(WebSocket(require('./websocket').routes()))
 }
 
 app.start({

@@ -37,8 +37,6 @@ let config = {
   },
   dbUrl: 'mongodb://localhost/logactivate',
   appLogFilename: 'logactivate.log',
-  exceptionFilename: 'exceptions.log',
-  exceptionFilesize: '10M',
   maxUploadFileSize: 200 * 1024 * 1024
 }
 
