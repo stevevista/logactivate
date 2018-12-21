@@ -35,7 +35,7 @@ router.get('/packages', authLevel('reporter'), async ctx => {
   query = appendQueryPaging(query, params.page, params.results)
   query = appendQuerySort(query, params.sortField, params.sortOrder)
 
-  const totalCount = await ctx.db.Log.countDocuments({})
+  const totalCount = await ctx.db.Package.countDocuments({})
   const results = await query.lean()
 
   results.forEach(e => {
