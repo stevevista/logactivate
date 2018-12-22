@@ -1,6 +1,6 @@
 'use strict'
 const Router = require('koa-router')
-const {MqttClient, brokeMqttOverSocket} = require('mqtt-over-web')
+const {Client, brokeMqttOverSocket} = require('mqtt-over-web')
 const {authenticateRequird, signDevice} = require('./auth')
 const config = require('./config')
 
@@ -27,7 +27,7 @@ router.all('/mqtt/:product?/:device?', authenticateRequird(), async ctx => {
       const deviceSecret = d.deviceSecret
 
       if (brokerUrl.indexOf('aliyuncs.com') !== -1) {
-        client = new MqttClient({
+        client = new Client({
           brokerUrl,
           productKey,
           deviceName,
@@ -46,7 +46,7 @@ router.all('/mqtt/:product?/:device?', authenticateRequird(), async ctx => {
   }
 
   if (!client) {
-    client = new MqttClient({
+    client = new Client({
       brokerUrl,
       productKey,
       deviceName,

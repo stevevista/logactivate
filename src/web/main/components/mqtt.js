@@ -2,7 +2,7 @@ import React from 'react'
 import { Button, Icon, Input } from 'antd'
 import { injectIntl } from 'react-intl'
 import { connect } from 'react-redux'
-import MqttClient from 'mqtt-over-web'
+import {Client} from 'mqtt-over-web'
 
 class MQTT extends React.Component {
   state = {
@@ -46,7 +46,7 @@ class MQTT extends React.Component {
   }
 
   componentDidMount() {
-    this.client = new MqttClient(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt/a11vWRALINU/AvQKEXmnxyrOc20vmZZB`)
+    this.client = new Client(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt/a11vWRALINU/AvQKEXmnxyrOc20vmZZB`)
     //this.client = new MqttClient(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt`)
     this.client.on('connect', () => {
       const mqttMsgs = [...this.state.mqttMsgs, '[mqtt connected]']
@@ -69,7 +69,7 @@ class MQTT extends React.Component {
       console.log(topic, message)
     })
 
-    this.client.on('message', (msg) => {
+    this.client.on('message', (topic, msg) => {
       const mqttMsgs = [...this.state.mqttMsgs, JSON.stringify(msg)]
       if (mqttMsgs.length > 30) {
         mqttMsgs.shift()
