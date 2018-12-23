@@ -1,12 +1,12 @@
 'use strict'
-const Router = require('koa-router')
+const {WebSocketRouter} = require('koa-app-server')
 const {Client, brokeMqttOverSocket} = require('mqtt-over-web')
 const {authenticateRequird, signDevice} = require('./auth')
 const config = require('./config')
 
-const router = new Router()
+const router = new WebSocketRouter()
 
-router.all('/mqtt/:product?/:device?', authenticateRequird(), async ctx => {
+router.route('/mqtt/:product?/:device?', authenticateRequird(), async ctx => {
   let client
 
   const mqttCfg = config.mqtt || {}

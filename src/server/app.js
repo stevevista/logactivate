@@ -1,6 +1,6 @@
 'use strict'
 const path = require('path')
-const {Koa, Static, WebSocket} = require('koa-app-server')
+const {Koa, Static} = require('koa-app-server')
 const koaBody = require('koa-body')
 const router = require('./routes')
 const db = require('./models')
@@ -33,12 +33,11 @@ app.use(koaBody())
 
 app
   .use(router.routes())
-  .use(router.allowedMethods())
 
 app.use(Static('/', path.join(__dirname, '../public'), {gzip: true}))
 
 if (config.websocket) {
-  app.use(WebSocket(require('./websocket').routes()))
+  app.use(require('./websocket'))
 }
 
 app.start({
