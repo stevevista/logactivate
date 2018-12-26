@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button, Icon, Input } from 'antd'
+import { Button, Icon, Input, message } from 'antd'
 import { injectIntl } from 'react-intl'
 import { connect } from 'react-redux'
 import {Client} from 'mqtt-over-web'
@@ -46,15 +46,12 @@ class MQTT extends React.Component {
   }
 
   componentDidMount() {
-    this.client = new Client(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt/a11vWRALINU/AvQKEXmnxyrOc20vmZZB`)
-    //this.client = new MqttClient(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt`)
+    this.client = new Client(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt`)
     this.client.on('connect', () => {
-      const mqttMsgs = [...this.state.mqttMsgs, '[mqtt connected]']
-      if (mqttMsgs.length > 30) {
-        mqttMsgs.shift()
-      }
-      this.setState({mqttMsgs})
-      this.client.subscribe(this.state.topic)
+      message.success('mqtt connected')
+      this.client.subscribe('$SYS/broker/clients/connected')
+      this.client.subscribe('$SYS/broker/clients/total')
+      this.client.subscribe('$SYS/broker/version')
     })
 
     this.client.serve('property/set', (data) => {
@@ -70,7 +67,7 @@ class MQTT extends React.Component {
     })
 
     this.client.on('message', (topic, msg) => {
-      const mqttMsgs = [...this.state.mqttMsgs, JSON.stringify(msg)]
+      const mqttMsgs = [...this.state.mqttMsgs, topic + ' : ' + JSON.stringify(msg)]
       if (mqttMsgs.length > 30) {
         mqttMsgs.shift()
       }

@@ -2,12 +2,11 @@ port: 3001
 cluster: true
 websocket: false
 mqtt:
-  brokerUrl: mqtt://localhost
+  brokerUrl: mqtt://deepzone.top
 storage: storage
 appLogLevel: warn
 appLogSize: 31457280
-database:
-  storage: database.sqlite
+dbUrl: mongodb://localhost/logactivate
 session:
   secrets: abcd.1234
 sysadmin:

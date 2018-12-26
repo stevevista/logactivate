@@ -24,13 +24,6 @@ async function initializeDb(db) {
       deviceName: 'testDevice',
       deviceSecret: '12345678'
     })
-
-    await db.Device.create({
-      productKey: 'a11vWRALINU',
-      deviceName: 'AvQKEXmnxyrOc20vmZZB',
-      deviceSecret: 'GTpahEdeOE4r1W3unpz3tF2Q3LA6Cx0r',
-      brokerUrl: 'mqtt://a11vWRALINU.iot-as-mqtt.cn-shanghai.aliyuncs.com'
-    })
   }
 }
 
