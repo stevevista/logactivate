@@ -42,13 +42,13 @@ if (config.websocket) {
 
 app.start({
   port: config.port,
-  ssl: config.sslOption,
+  ssl: config.ssl,
   cluster: config.cluster
 }, info => {
   if (info.master) {
     logger.info(`http server on ${config.port}, on ${info.numCPUs} cpus`)
     console.log(`http server on ${config.port}, on ${info.numCPUs} cpus`)
-    if (config.sslOption) {
+    if (config.ssl) {
       console.log('https enabled')
     }
   }

@@ -26,14 +26,15 @@ const envConfigPath = path.join(configDir, process.env.NODE_ENV + '.yml')
 let config = {
   configDir,
   logdir: 'storage',
-  tmpdir: 'tmp',
-  ssldir: 'ssl',
-  ssl: true,
+  tmpdir: 'tmp', 
+  ssl: {
+    dir: 'ssl'
+  },
   mqtt: {
     brokerUrl: 'mqtt://localhost'
   },
   session: {
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: '24h'
   },
   dbUrl: 'mongodb://localhost/logactivate',
   appLogFilename: 'logactivate.log',
@@ -50,26 +51,49 @@ if (fs.existsSync(envConfigPath)) {
   config = _.merge(config, requireJs(envConfigPath))
 }
 
-if (config.logdir[0] !== '/') {
-  config.logdir = path.join(workDir, config.logdir)
-}
-
-function resolvePath (obj, key, basedir) {
-  if (obj && key in obj) {
-    if (obj[key][0] !== '/') {
-      obj[key] = path.join(basedir, obj[key])
+function _resolveObjectAttribute(cfg, attr, transform) {
+  const val = cfg[attr[0]]
+  if (attr.length > 1) {
+    if (typeof val !== 'object') {
+      return
     }
+    _resolveObjectAttribute(val, attr.slice(1), transform)
+  } else {
+    transform(cfg, attr[0])
   }
 }
 
-if (typeof config.session.maxAge === 'string') {
-  config.session.maxAge = ms(config.session.maxAge)
+function resolveConfigPath(basedir, cfg, attributes) {
+  for (const attr of attributes) {
+    _resolveObjectAttribute(cfg, attr.split('.'), (obj, a) => {
+      if (typeof obj[a] === 'string') {
+        obj[a] = path.resolve(basedir, obj[a])
+      }
+    })
+  }
 }
 
-resolvePath(config.ota, 'firmwareDir', workDir)
-resolvePath(config, 'appLogFilename', workDir)
-resolvePath(config, 'tmpdir', workDir)
-resolvePath(config, 'ssldir', workDir)
+function resolveConfigMsTime(cfg, attributes) {
+  for (const attr of attributes) {
+    _resolveObjectAttribute(cfg, attr.split('.'), (obj, a) => {
+      if (typeof obj[a] === 'string') {
+        obj[a] = ms(obj[a])
+      }
+    })
+  }
+}
+
+resolveConfigPath(workDir, config, [
+  'logdir',
+  'tmpdir',
+  'ssl.dir',
+  'ota.firmwareDir',
+  'appLogFilename'
+])
+
+resolveConfigMsTime(config, [
+  'session.maxAge'
+])
 
 // app log configuration
 const logConfig = {
@@ -93,25 +117,6 @@ const logConfig = {
 
 // init logger
 log4js.configure(logConfig)
-
-// ssl config
-if (config.ssl) {
-  if (fs.existsSync(config.ssldir)) {
-    let key
-    let cert
-    for (const f of fs.readdirSync(config.ssldir)) {
-      const ext = path.extname(f)
-      if (ext === '.crt' || ext === '.pem') {
-        cert = fs.readFileSync(path.join(config.ssldir, f))
-      } else if (ext === '.key') {
-        key = fs.readFileSync(path.join(config.ssldir, f))
-      }
-    }
-    if (key && cert) {
-      config.sslOption = {key, cert}
-    }
-  }
-}
 
 // init storage
 if (cluster.isMaster) {

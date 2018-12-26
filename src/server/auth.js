@@ -26,7 +26,7 @@ function authenticateRequird (required = true) {
 function decodeToken(token, db) {
   const getKey = (header, callback) => {
     if (header.productKey && header.deviceName) {
-      console.log(header)
+      // console.log(header)
       db.Device.findOne({productKey: header.productKey, deviceName: header.deviceName})
         .then(r => {
           if (!r) {
