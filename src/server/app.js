@@ -31,8 +31,7 @@ app.on('error', err => {
 
 app.use(koaBody())
 
-app
-  .use(router.routes())
+app.use(router.routes())
 
 app.use(Static('/', path.join(__dirname, '../public'), {gzip: true}))
 

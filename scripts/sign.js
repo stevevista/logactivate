@@ -23,7 +23,7 @@ if ('max-age' in obj) {
   delete obj['max-age']
 }
 
-signToken(obj, null, opt)
+signToken(obj, opt)
 .then(token => {
   console.log(obj)
   console.log(token)

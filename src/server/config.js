@@ -25,7 +25,7 @@ const envConfigPath = path.join(configDir, process.env.NODE_ENV + '.yml')
 
 let config = {
   configDir,
-  logdir: 'storage',
+  storage: 'storage',
   tmpdir: 'tmp', 
   ssl: {
     dir: 'ssl'
@@ -84,10 +84,9 @@ function resolveConfigMsTime(cfg, attributes) {
 }
 
 resolveConfigPath(workDir, config, [
-  'logdir',
+  'storage',
   'tmpdir',
   'ssl.dir',
-  'ota.firmwareDir',
   'appLogFilename'
 ])
 
@@ -120,9 +119,9 @@ log4js.configure(logConfig)
 
 // init storage
 if (cluster.isMaster) {
-  if (!fs.existsSync(config.logdir)) {
+  if (!fs.existsSync(config.storage)) {
     try {
-      fs.mkdirSync(config.logdir)
+      fs.mkdirSync(config.storage)
     } catch (e) {
       console.error('cannot initialize storage', e.message)
       process.exit(1)

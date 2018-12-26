@@ -12,6 +12,7 @@ const {appendQueryPaging, appendQuerySort} = require('../utils/dbhelper')
 const PartialUpload = require('koa-partial-upload')
 const {authLevel} = require('../auth')
 const config = require('../config')
+const logger = require('log4js').getLogger()
 
 const router = Router()
 
@@ -59,7 +60,7 @@ router.post('/upload', authLevel('admin'), PartialUpload({
   })
 
   const storename = uuid()
-  const dest = path.join(config.ota.firmwareDir, storename)
+  const dest = path.join(config.storage, storename)
   const file = ctx.request.files.file
   await fs.forceMove(file.path, dest)
 
@@ -81,9 +82,9 @@ router.post('/delete/:id', authLevel('admin'), async ctx => {
     return
   }
 
-  const filepath = path.join(config.ota.firmwareDir, r.storename)
+  const filepath = path.join(config.storage, r.storename)
   await r.remove()
-  await fs.unlink(filepath)
+  await fs.unlink(filepath).catch(e => logger.error(e))
   ctx.body = ''
 })
 
@@ -123,7 +124,8 @@ router.get('/download/:doc_id', range, async ctx => {
     ctx.body = ''
     return
   }
-  const filepath = path.join(config.ota.firmwareDir, doc.storename)
+
+  const filepath = path.join(config.storage, doc.storename)
   ctx.attachment(doc.filename)
   await send(ctx, filepath, {root: '/'})
 })

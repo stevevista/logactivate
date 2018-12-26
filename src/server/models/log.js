@@ -1,6 +1,4 @@
 'use strict'
-const config = require('../config')
-const path = require('path')
 const mongoose = require('mongoose')
 const uuid = require('uuid/v1')
 
@@ -52,10 +50,6 @@ schema.statics.saveAttachment = async function(doc) {
     log = new Log(doc)
   }
   await log.save()
-}
-
-schema.statics.constructStorePath = function (imei, filename) {
-  return path.join(config.logdir, imei, filename)
 }
 
 const Log = mongoose.model('Log', schema)

@@ -3,15 +3,13 @@ cluster: true
 websocket: false
 mqtt:
   brokerUrl: mqtt://localhost
-logdir: storage
+storage: storage
 appLogLevel: warn
 appLogSize: 31457280
 database:
   storage: database.sqlite
 session:
   secrets: abcd.1234
-ota:
-  firmwareDir: storage/firmwares
 sysadmin:
   username: sysadmin
   password: sysadmin

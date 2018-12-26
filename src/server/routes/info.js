@@ -9,7 +9,7 @@ router.get('/config', authenticateRequird(), ctx => {
   // filter out crediential info
   const cfg = {
     port: config.port,
-    logdir: config.logdir,
+    storage: config.storage,
     cluster: config.cluster,
     logLevel: config.appLogLevel
   }

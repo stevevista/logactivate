@@ -2,30 +2,6 @@
 const fs = require('fs')
 const path = require('path')
 
-async function mkdir (path, options) {
-  return new Promise((resolve, reject) => {
-    fs.mkdir(path, options, err => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
-      }
-    })
-  })
-}
-
-function access (path, mode) {
-  return new Promise((resolve, reject) => {
-    fs.access(path, mode, (err) => {
-      if (err) {
-        resolve(false)
-      } else {
-        resolve(true)
-      }
-    })
-  })
-}
-
 function rename (oldPath, newPath) {
   return new Promise((resolve, reject) => {
     fs.rename(oldPath, newPath, async err => {
@@ -38,8 +14,19 @@ function rename (oldPath, newPath) {
   })
 }
 
+async function copy (src, dest) {
+  return new Promise(async (resolve, reject) => {
+    const ws = fs.createWriteStream(dest, { encoding: null })
+    const is = fs.createReadStream(src, { encoding: null })
+    ws.on('error', reject)
+    ws.on('close', resolve)
+    is.on('error', reject)
+    is.pipe(ws)
+  })
+}
+
 async function forceMove(oldPath, newPath) {
-  await makeSureFileDir(newPath)
+  await mkdirp(path.dirname(newPath))
   try {
     await rename(oldPath, newPath)
   } catch (e) {
@@ -61,23 +48,27 @@ function unlink (path) {
   })
 }
 
-async function makeSureDir(dir) {
-  const exists = await access(dir)
-  if (!exists) {
-    await mkdir(dir, {recursive: true})
-  }
-}
-
-function makeSureFileDir(fullpath) {
-  return makeSureDir(path.dirname(fullpath))
+async function mkdirp(dir) {
+  return new Promise((resolve, reject) => {
+    fs.access(dir, null, (err) => {
+      if (!err) {
+        return resolve()
+      }
+      fs.mkdir(dir, {recursive: true}, err => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
+    })
+  })
 }
 
 module.exports = {
-  access,
-  mkdir,
   rename,
   forceMove,
+  copy,
   unlink,
-  makeSureDir,
-  makeSureFileDir
+  mkdirp
 }

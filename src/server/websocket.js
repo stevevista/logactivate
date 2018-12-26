@@ -7,14 +7,13 @@ const config = require('./config')
 const router = new WebSocketRouter()
 
 router.route('/mqtt/:product?/:device?', authenticateRequird(), async ctx => {
-  let client
-
   const mqttCfg = config.mqtt || {}
   let brokerUrl = mqttCfg.brokerUrl || 'mqtt:://localhost'
-  const productKey = ctx.params.product
-  const deviceName = ctx.params.device
-  const username = ctx.state.decoded_token.username
-  let password = ctx.state._token
+  let deviceSecret = mqttCfg.deviceSecret
+  let password = mqttCfg.password || ctx.state._token
+  const productKey = ctx.params.product || mqttCfg.productKey
+  const deviceName = ctx.params.device || mqttCfg.deviceName
+  const username = mqttCfg.username || ctx.state.decoded_token.username
 
   if (productKey && deviceName) { 
     const d = await ctx.db.Device.findOne({
@@ -24,16 +23,9 @@ router.route('/mqtt/:product?/:device?', authenticateRequird(), async ctx => {
 
     if (d) {
       brokerUrl = d.brokerUrl || brokerUrl
-      const deviceSecret = d.deviceSecret
+      deviceSecret = d.deviceSecret || deviceSecret
 
-      if (brokerUrl.indexOf('aliyuncs.com') !== -1) {
-        client = new Client({
-          brokerUrl,
-          productKey,
-          deviceName,
-          deviceSecret
-        })
-      } else {
+      if (brokerUrl.indexOf('aliyuncs.com') === -1) {
         password = signDevice({
           username
         }, {
@@ -45,15 +37,15 @@ router.route('/mqtt/:product?/:device?', authenticateRequird(), async ctx => {
     }
   }
 
-  if (!client) {
-    client = new Client({
-      brokerUrl,
-      productKey,
-      deviceName,
-      username,
-      password
-    })
-  }
+  const client = new Client({
+    ...mqttCfg,
+    brokerUrl,
+    deviceSecret,
+    productKey,
+    deviceName,
+    username,
+    password
+  })
 
   brokeMqttOverSocket(client, ctx.websocket)
 })

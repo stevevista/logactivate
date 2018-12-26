@@ -49,7 +49,7 @@ full configurations:
 ```
 port: 3001
 cluster: true
-logdir: storage
+storage: storage
 tmpdir: tmp
 ssldir: ssl
 ssl: true
@@ -61,8 +61,6 @@ dbUrl: 'mongodb://localhost/logactivate'
 session:
   secrets: abcd.1234
   maxAge: 24 * 60 * 60 * 1000
-ota:
-  firmwareDir: storage/firmwares
 sysadmin:
   username: sysadmin
   password: sysadmin

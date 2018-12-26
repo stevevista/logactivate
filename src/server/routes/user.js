@@ -3,6 +3,7 @@ const Router = require('koa-router')
 const {validate} = require('../utils/validate')
 const Joi = require('joi')
 const {authenticateRequird, authLevel, signToken, isSuper, higherLevelThan} = require('../auth')
+const config = require('../config')
 
 const router = new Router()
 
@@ -24,7 +25,8 @@ router.post('/auth', async ctx => {
     username: dbuser.username,
     level: dbuser.level
   }
-  await signToken(tok, ctx)
+  const token = await signToken(tok)
+  ctx.cookies.set('access_token', token, { maxAge: config.session.maxAge })
 
   ctx.body = tok
 })
@@ -146,7 +148,7 @@ router.post('/share-token', authenticateRequird(), async ctx => {
     level: params.level,
     owner: ctx.state.decoded_token.username
   }
-  const signed = await signToken(tok, null, {maxAge: params.max_age})
+  const signed = await signToken(tok, {maxAge: params.max_age})
 
   ctx.body = signed
 })
