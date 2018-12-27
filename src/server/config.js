@@ -27,9 +27,10 @@ let config = {
   configDir,
   storage: 'storage',
   tmpdir: 'tmp', 
-  ssl: {
-    dir: 'ssl'
-  },
+  //ssl: {
+  //  dir: 'ssl',
+  //  port: 443
+  //},
   mqtt: {
     brokerUrl: 'mqtt://localhost'
   },
