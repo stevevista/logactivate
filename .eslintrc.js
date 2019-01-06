@@ -32,7 +32,8 @@ module.exports = {
     'react/display-name': 0,
     'react/prop-types': 0,
     'spaced-comment': 0,
-    'semi': 0
+    'semi': 0,
+    'comma-dangle': 0
   },
   settings: {
     react: {

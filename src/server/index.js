@@ -36,9 +36,7 @@ app.use(router.routes())
 
 app.use(Static('/', path.join(__dirname, '../public'), {gzip: true}))
 
-if (config.websocket) {
-  app.use(require('./websocket'))
-}
+app.use(require('./websocket'))
 
 app.start({
   port: config.port,

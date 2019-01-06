@@ -1,8 +1,7 @@
 port: 3001
 cluster: true
-websocket: false
 mqtt:
-  brokerUrl: mqtt://deepzone.top
+  brokerUrl: mqtt://localhost
 storage: storage
 appLogLevel: warn
 appLogSize: 31457280

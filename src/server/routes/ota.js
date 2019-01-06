@@ -60,7 +60,7 @@ router.post('/upload', authLevel('admin'), PartialUpload({
   })
 
   const storename = uuid()
-  const dest = path.join(config.storage, storename)
+  const dest = path.join(config.otaStorage, storename)
   const file = ctx.request.files.file
   await fs.forceMove(file.path, dest)
 
@@ -69,6 +69,7 @@ router.post('/upload', authLevel('admin'), PartialUpload({
     version: params.version,
     filename: file.name,
     storename,
+    filesize: file.size,
     description: params.desc
   })
   ctx.body = ''
@@ -82,7 +83,7 @@ router.post('/delete/:id', authLevel('admin'), async ctx => {
     return
   }
 
-  const filepath = path.join(config.storage, r.storename)
+  const filepath = path.join(config.otaStorage, r.storename)
   await r.remove()
   await fs.unlink(filepath).catch(e => logger.error(e))
   ctx.body = ''
@@ -125,7 +126,7 @@ router.get('/download/:doc_id', range, async ctx => {
     return
   }
 
-  const filepath = path.join(config.storage, doc.storename)
+  const filepath = path.join(config.otaStorage, doc.storename)
   ctx.attachment(doc.filename)
   await send(ctx, filepath, {root: '/'})
 })

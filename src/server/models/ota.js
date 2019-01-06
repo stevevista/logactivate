@@ -6,6 +6,7 @@ const schema = new mongoose.Schema({
   applyTo: String,
   filename: String,
   storename: String,
+  filesize: Number,
   description: String
 }, {
   timestamps: true

@@ -1,7 +1,3 @@
 cluster: false
 appLogLevel: debug
-websocket: true
-mqtt:
-  brokerUrl: mqtt://deepzone.top
-  username: sysadmin
-  password: 8bc6e7
+imageServer: http://localhost:5000/detect

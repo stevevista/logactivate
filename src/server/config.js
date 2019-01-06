@@ -27,6 +27,7 @@ let config = {
   configDir,
   storage: 'storage',
   tmpdir: 'tmp',
+  imgdir: 'images',
   mqtt: {
     brokerUrl: 'mqtt://localhost'
   },
@@ -80,16 +81,37 @@ function resolveConfigMsTime(cfg, attributes) {
   }
 }
 
+function resolveConfigPathExists(cfg, attributes) {
+  for (const attr of attributes) {
+    _resolveObjectAttribute(cfg, attr.split('.'), (obj, a) => {
+      if (typeof obj[a] === 'string') {
+        if (!fs.existsSync(obj[a])) {
+          try {
+            fs.mkdirSync(obj[a])
+          } catch (e) {
+            console.error('cannot initialize tmpdir: ' + obj[a], e.message)
+            process.exit(1)
+          }
+        }
+      }
+    })
+  }
+}
+
 resolveConfigPath(workDir, config, [
   'storage',
   'tmpdir',
   'ssl.dir',
-  'appLogFilename'
+  'appLogFilename',
+  'imgdir'
 ])
 
 resolveConfigMsTime(config, [
   'session.maxAge'
 ])
+
+config.logStorage = path.join(config.storage, 'logs')
+config.otaStorage = path.join(config.storage, 'ota')
 
 // app log configuration
 const logConfig = {
@@ -116,23 +138,13 @@ log4js.configure(logConfig)
 
 // init storage
 if (cluster.isMaster) {
-  if (!fs.existsSync(config.storage)) {
-    try {
-      fs.mkdirSync(config.storage)
-    } catch (e) {
-      console.error('cannot initialize storage', e.message)
-      process.exit(1)
-    }
-  }
-
-  if (!fs.existsSync(config.tmpdir)) {
-    try {
-      fs.mkdirSync(config.tmpdir)
-    } catch (e) {
-      console.error('cannot initialize tmpdir', e.message)
-      process.exit(1)
-    }
-  }
+  resolveConfigPathExists(config, [
+    'storage',
+    'tmpdir',
+    'imgdir',
+    'logStorage',
+    'otaStorage'
+  ])
 }
 
 module.exports = config

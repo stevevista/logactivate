@@ -51,7 +51,7 @@ router.post('/upload', PartialUpload({
 
     const filename = file.name
     const storename = uuid()
-    await fs.forceMove(file.path, path.join(config.storage, storename))
+    await fs.forceMove(file.path, path.join(config.logStorage, storename))
 
     doc.attachments = [{
       ip,
@@ -124,7 +124,7 @@ router.get('/files/:doc_id/:a_id', authLevel('reporter'), range, async ctx => {
     return
   }
 
-  const filepath = path.join(config.storage, a.storename)
+  const filepath = path.join(config.logStorage, a.storename)
   ctx.attachment(a.filename)
   await send(ctx, filepath, {root: '/'})
 })

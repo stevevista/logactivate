@@ -22,6 +22,10 @@ class OTA extends React.Component {
     dataIndex: 'name',
     sorter: true
   }, {
+    title: 'Size',
+    dataIndex: 'filesize',
+    sorter: true
+  }, {
     title: 'Version',
     dataIndex: 'version',
     sorter: true
