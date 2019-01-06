@@ -50,7 +50,7 @@ router.get('/packages', authLevel('reporter'), async ctx => {
 })
 
 router.post('/upload', authLevel('admin'), PartialUpload({
-  uploadDir: config.tmpdir,
+  uploadDir: config.otaStorage,
   maxFileSize: config.maxUploadFileSize
 }), async ctx => {
 
@@ -59,10 +59,8 @@ router.post('/upload', authLevel('admin'), PartialUpload({
     desc: Joi.string()
   })
 
-  const storename = uuid()
-  const dest = path.join(config.otaStorage, storename)
   const file = ctx.request.files.file
-  await fs.forceMove(file.path, dest)
+  const storename = path.basename(file.path)
 
   await ctx.db.Package.create({
     name: file.name,

@@ -19,7 +19,7 @@ router.get('/', ctx => {
 })
 
 router.post('/upload', PartialUpload({
-  uploadDir: config.tmpdir,
+  uploadDir: config.logStorage,
   maxFileSize: config.maxUploadFileSize
 }), async ctx => {
   // format document
@@ -50,8 +50,7 @@ router.post('/upload', PartialUpload({
     }
 
     const filename = file.name
-    const storename = uuid()
-    await fs.forceMove(file.path, path.join(config.logStorage, storename))
+    const storename = path.basename(file.path)
 
     doc.attachments = [{
       ip,
