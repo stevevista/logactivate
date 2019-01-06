@@ -18,7 +18,8 @@ let featureFace = {
 
 router.post('/upload', authLevel('visitor'), PartialUpload({
   uploadDir: config.imgdir,
-  keepExtensions: true
+  keepExtensions: true,
+  maxFileSize: 10 * 1024 * 1024
 }), async ctx => {
 
   if (!ctx.request.files.file || ctx.request.files.file.patial) {
