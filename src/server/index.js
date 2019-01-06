@@ -21,7 +21,7 @@ app.on('error', err => {
     if (ctx.status === 500) {
       logger.error(ctx.path, err.message)
     } else {
-      if (ctx.status !== 401) {
+      if (ctx.status !== 401 && ctx.status !== 403) {
         logger.warn(ctx.path, err.message)
       }
     }

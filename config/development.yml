@@ -1,3 +1,4 @@
 cluster: false
 appLogLevel: debug
-imageServer: http://localhost:5000/detect
+imageServer: http://localhost:5000
+

@@ -37,9 +37,9 @@ router.post('/superuser', async ctx => {
 })
 
 router.post('/acl', async ctx => {
-  const {username, clientid, topic, acc} = ctx.request.body
+  // const {username, clientid, topic, acc} = ctx.request.body
 
-  console.log(username, clientid, topic, acc)
+  // console.log(username, clientid, topic, acc)
   ctx.body = ''
 })
 

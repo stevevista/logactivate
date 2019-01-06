@@ -170,10 +170,12 @@ class OTA extends React.Component {
     this.client.on('message', (topic, msg) => {
       if (topic.indexOf('/shot/upload')) {
         const obj = JSON.parse(msg);
+        console.log(obj)
         this.setState({imageUrl: obj.url, detects: []})
       }
       if (topic.indexOf('/shot/detect')) {
         const obj = JSON.parse(msg);
+        console.log(obj)
         if (obj.output) {
           this.setState({imageUrl: obj.output})
         }

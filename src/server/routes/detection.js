@@ -27,8 +27,9 @@ router.post('/upload', authLevel('visitor'), PartialUpload({
   }
 
   const file = ctx.request.files.file
-  const filepath = file.path
-  const filename = path.basename(file.path)
+  let filepath = file.path
+  const filesize = file.size
+  let filename = path.basename(file.path)
 
   const params = validate(ctx.request.body, {
     product: Joi.string().required(),
@@ -40,6 +41,35 @@ router.post('/upload', authLevel('visitor'), PartialUpload({
   mqttCfg.username = mqttCfg.username || ctx.state.decoded_token.username
 
   ctx.body = ''
+
+  if (filesize > 2 * 1024 * 1024) {
+    try {
+      const ret = await axios({
+        url: config.imageServer + '/resize',
+        method: 'post',
+        data: {
+          filepath
+        },
+        transformRequest: [function (data) {
+          // Do whatever you want to transform the data
+          let ret = ''
+          for (let it in data) {
+            ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&'
+          }
+          return ret
+        }],
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      })
+      if (ret.data.path) {
+        filename = ret.data.path
+        filepath = path.join(config.imgdir, filename)
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   const id = uuid++
   Client.sendMessage(mqttCfg, `sys/${params.product}/${params.device}/screen/upload`, JSON.stringify({
@@ -57,7 +87,7 @@ router.post('/upload', authLevel('visitor'), PartialUpload({
   
   setImmediate(() => {
     axios({
-      url: config.imageServer,
+      url: config.imageServer + '/detect',
       method: 'post',
       data: {
         filepath,
