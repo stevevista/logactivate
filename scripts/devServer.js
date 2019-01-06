@@ -45,7 +45,7 @@ for (const arg of process.argv) {
   }
 }
 
-const app = require('../src/server/app')
+const app = require('../src/server')
 
 if (!notCompileWeb) {
   const rendererConfig = require('../webpack.config')
