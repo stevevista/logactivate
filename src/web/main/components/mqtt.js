@@ -2,7 +2,7 @@ import React from 'react'
 import { Button, Icon, Input, message } from 'antd'
 import { injectIntl } from 'react-intl'
 import { connect } from 'react-redux'
-import {Client} from 'mqtt-over-web'
+import {Client} from 'mqtt-over-web/web'
 
 class MQTT extends React.Component {
   state = {

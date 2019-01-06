@@ -26,10 +26,7 @@ const envConfigPath = path.join(configDir, process.env.NODE_ENV + '.yml')
 let config = {
   configDir,
   storage: 'storage',
-  tmpdir: 'tmp', 
-  ssl: {
-    dir: 'ssl'
-  },
+  tmpdir: 'tmp',
   mqtt: {
     brokerUrl: 'mqtt://localhost'
   },
