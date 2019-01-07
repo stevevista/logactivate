@@ -6,12 +6,10 @@ const path = require('path')
 const send = require('koa-send')
 const url = require('url')
 const {validate} = require('../utils/validate')
-const fs = require('../utils/async-fs')
 const {appendQueryPaging, appendQuerySort, constructQueryFilter} = require('../utils/dbhelper')
 const {authLevel} = require('../auth')
 const config = require('../config')
 const PartialUpload = require('koa-partial-upload')
-const uuid = require('uuid/v1')
 const router = Router()
 
 router.get('/', ctx => {

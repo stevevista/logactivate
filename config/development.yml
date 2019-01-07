@@ -1,4 +1,7 @@
 cluster: false
 appLogLevel: debug
 imageServer: http://localhost:5000
-
+mqtt:
+  brokerUrl: mqtt://deepzone.top
+  username: vistor
+  password: '123'
