@@ -45,6 +45,10 @@ class MQTT extends React.Component {
     this.client.publish(this.state.topic, this.state.message).then(() => { console.log('published') })
   }
 
+  componentWillUnmount() {
+    this.client.end()
+  }
+ 
   componentDidMount() {
     this.client = new Client(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt`)
     this.client.on('connect', () => {
