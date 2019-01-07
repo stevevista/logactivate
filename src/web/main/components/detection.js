@@ -144,9 +144,10 @@ class OTA extends React.Component {
   }
 
   componentWillUnmount() {
+    this.client.removeAllListeners()
     this.client.end()
   }
-  
+
   componentDidMount() {
     axios.get('/detection/feature-face')
       .then(({data}) => {

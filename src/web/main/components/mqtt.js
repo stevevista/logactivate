@@ -46,9 +46,10 @@ class MQTT extends React.Component {
   }
 
   componentWillUnmount() {
+    this.client.removeAllListeners()
     this.client.end()
   }
- 
+
   componentDidMount() {
     this.client = new Client(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/mqtt`)
     this.client.on('connect', () => {
@@ -58,11 +59,7 @@ class MQTT extends React.Component {
       this.client.subscribe('$SYS/broker/version')
     })
 
-    this.client.serve('property/set', (data) => {
-      console.log('Received a message: ', JSON.stringify(data))
-    });
-
-    this.client.subscribeAndListen('/presence', function (err, topic, message) {
+    this.unSubscriptions = this.client.subscribeAndListen('/presence', function (err, topic, message) {
       if (err) {
         throw err
       }
